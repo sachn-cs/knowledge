@@ -70,3 +70,21 @@
 - Extension system: ExtensionRegistry with entry point discovery
 - 5 new exception types for structured error handling
 - 5 new test modules (53 tests) — all 243 passing, ruff/mypy clean
+
+### Milestone 13 — Documentation
+
+- `375497c` Comprehensive User Guide with create/read/update/verify/score/diff/merge/delete workflows
+- `375497c` Full API Reference documenting Knowledge, OKFDocument, VerificationResult, CompilerPass, PassManager
+- `375497c` Architecture Guide with layer diagrams, verification lifecycle, and compiler pipeline
+- `375497c` Plugin Guide with extension points, entry point registration, and custom pass examples
+- `375497c` Updated examples/basic_usage.py to use the real SDK
+- `375497c` Updated mkdocs.yml navigation with all documentation sections
+
+### Milestone 14 — Release Preparation
+
+- `214852c` CONTRIBUTING.md with development setup, PR process, and code style
+- `214852c` CODE_OF_CONDUCT.md (Contributor Covenant v2.1)
+- `214852c` GitHub Actions release workflow for PyPI publishing
+- `214852c` Benchmark infrastructure (pytest-benchmark) with verification, serialization, and creation benchmarks
+- `214852c` Updated README.md with current milestone status and documentation links
+- `214852c` Updated pyproject.toml with benchmark dependencies and test paths
