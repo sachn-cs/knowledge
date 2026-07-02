@@ -28,6 +28,9 @@ dependencies = [
     "pydantic>=2.0",
 ]
 
+[project.scripts]
+knowledge = "knowledge.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/anomalyco/knowledge"
 Documentation = "https://knowledge-sdk.dev"
