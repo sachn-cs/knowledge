@@ -4,7 +4,6 @@ from knowledge.engine import VerificationEngine, VerificationResult
 from knowledge.models import Entity, Evidence, Fact, KnowledgeGraph
 from knowledge.passes import (
     ConsistencyValidationPass,
-    PassManager,
     SchemaValidationPass,
     ScoringPass,
     StructuralValidationPass,
@@ -113,7 +112,7 @@ class TestVerificationEngine:
     def test_verify_uses_default_passes(self) -> None:
         engine = VerificationEngine()
         assert engine.pass_manager.registered_ids == []
-        result = engine.verify(KnowledgeGraph())
+        engine.verify(KnowledgeGraph())
         # Default passes should be registered automatically
         assert len(engine.pass_manager.registered_ids) > 0
         assert "verification.schema" in engine.pass_manager.registered_ids

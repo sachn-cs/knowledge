@@ -5,9 +5,8 @@ import tempfile
 import pytest
 
 from knowledge import Knowledge, OKFDocument, OKFSerializer
-from knowledge.engine import VerificationEngine, VerificationResult
+from knowledge.engine import VerificationResult
 from knowledge.exceptions import (
-    KnowledgeError,
     ParseError,
     UnsupportedSourceError,
 )
