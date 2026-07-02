@@ -1,0 +1,16 @@
+from pydantic import Field
+
+from knowledge.models.base import KnowledgeModel
+
+
+class Concept(KnowledgeModel):
+    """An abstract idea that organizes knowledge.
+
+    Concepts represent intangible notions such as "machine learning",
+    "ontology", "version control", or "semantic validation". They
+    group and categorize knowledge rather than representing concrete
+    objects.
+    """
+
+    name: str
+    description: str | None = Field(default=None)
