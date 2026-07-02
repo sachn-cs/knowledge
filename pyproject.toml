@@ -44,6 +44,9 @@ dev = [
     "ruff>=0.6.0",
     "mypy>=1.11.0",
 ]
+bench = [
+    "pytest-benchmark>=4.0.0",
+]
 docs = [
     "mkdocs>=1.6.0",
     "mkdocstrings[python]>=0.25.0",
@@ -67,5 +70,5 @@ plugins = ["pydantic.mypy"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
-testpaths = ["tests"]
+testpaths = ["tests", "benchmarks"]
 addopts = "-v --tb=short"

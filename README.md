@@ -9,15 +9,14 @@ Unlike traditional document generation tools, `knowledge` treats an OKF document
 as a **living software artifact** — structured, versioned, verified, and
 continuously improvable.
 
+Every mutation passes through a verification engine that validates, diagnoses,
+repairs, and rescores until a quality threshold is met.
+
 ---
 
 ## Status
 
-**Milestone: Foundation** — v0.1.0
-
-The core domain model, OKF parser/serializer, and compiler pass framework are
-complete. Knowledge extraction, normalization, semantic verification, and the
-public API are under active development.
+**v0.1.0** — All 14 milestones complete.
 
 | Milestone | Status |
 |---|---|
@@ -27,55 +26,43 @@ public API are under active development.
 | Compiler Framework | ✅ Complete |
 | Knowledge Extraction | ✅ Complete |
 | Normalization | ✅ Complete |
+| Verification Engine | ✅ Complete |
 | Semantic Verification | ✅ Complete |
-| Verification Engine | 🚧 In Progress |
-| Repair Engine | ❌ Not Started |
-| Public SDK | ❌ Not Started |
-| CLI | ❌ Not Started |
-| Extension System | 🚧 Partial |
-| Documentation | 🚧 Partial |
-| Release Preparation | 🚧 Partial |
-
-See [SPEC.md](SPEC.md) for the full architecture and roadmap.
+| Repair Engine | ✅ Complete |
+| Public SDK | ✅ Complete |
+| CLI | ✅ Complete |
+| Extension System | ✅ Complete |
+| Documentation | ✅ Complete |
+| Release Preparation | ✅ Complete |
 
 ---
 
 ## Quick Start
 
 ```python
-from knowledge.okf import OKFParser, OKFSerializer
-from knowledge.models import Entity, KnowledgeGraph
-from knowledge.passes import (
-    ExtractionPass,
-    AliasResolutionPass,
-    DuplicateDetectionPass,
-    SemanticValidationPass,
-    PassManager,
-    Phase,
-)
+from knowledge import Knowledge
 
-# Build a pipeline
-manager = PassManager()
-manager.register(ExtractionPass())
-manager.register(AliasResolutionPass())
-manager.register(DuplicateDetectionPass())
-manager.register(SemanticValidationPass())
+# Create knowledge from text
+knowledge = Knowledge()
+okf = knowledge.create("Python is a programming language.")
+okf.verify()
+okf.save("knowledge.md")
+```
 
-# Extract knowledge from source text
-graph = KnowledgeGraph()
-result = manager.execute(graph, config={
-    "extraction.pipeline": {
-        "content": "Python is a programming language. "
-                   "JavaScript is used for web development.",
-        "source": "example.md",
-        "format": "text",
-    }
-})
+## CLI
 
-# Serialize to OKF Markdown
-serializer = OKFSerializer()
-okf_output = serializer.serialize(result.graph)
-print(okf_output)
+```bash
+# Create from text
+knowledge create "Python is a language." -o knowledge.md
+
+# Verify
+knowledge verify knowledge.md
+
+# Score
+knowledge score knowledge.md
+
+# Diff
+knowledge diff before.md after.md
 ```
 
 ## Installation
@@ -95,9 +82,15 @@ mypy knowledge/
 
 ## Documentation
 
+- [User Guide](docs/user_guide.md) — Step-by-step usage
 - [Architecture](docs/architecture.md) — System design and layer overview
 - [API Reference](docs/api.md) — Public API documentation
+- [Plugin Guide](docs/plugin_guide.md) — Extending the SDK
 - [SPEC.md](SPEC.md) — Full specification and roadmap
+
+## Examples
+
+See [examples/basic_usage.py](examples/basic_usage.py) for a complete walkthrough.
 
 ## License
 
