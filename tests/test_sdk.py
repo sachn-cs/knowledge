@@ -1,0 +1,163 @@
+"""Tests for the public SDK — Knowledge and OKFDocument classes."""
+
+import tempfile
+
+import pytest
+
+from knowledge import Knowledge, OKFDocument, OKFSerializer
+from knowledge.engine import VerificationEngine, VerificationResult
+from knowledge.exceptions import (
+    KnowledgeError,
+    ParseError,
+    UnsupportedSourceError,
+)
+from knowledge.models import Entity, KnowledgeGraph
+from knowledge.passes.scoring_pass import KnowledgeScore
+
+
+class TestKnowledge:
+    def test_create_with_text(self) -> None:
+        knowledge = Knowledge()
+        doc = knowledge.create("Python is a programming language.", verify=False)
+        assert isinstance(doc, OKFDocument)
+        assert len(doc.graph.entities) > 0
+        assert len(doc.graph.facts) > 0
+
+    def test_create_with_verify(self) -> None:
+        knowledge = Knowledge()
+        doc = knowledge.create("Python is a language.", verify=True)
+        assert isinstance(doc, OKFDocument)
+        assert doc._last_verification is not None
+
+    def test_create_from_file(self) -> None:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+            f.write("# Knowledge\n\nPython is a language.\n")
+            fname = f.name
+        knowledge = Knowledge()
+        doc = knowledge.create(fname, verify=False)
+        assert doc.source is not None
+        assert len(doc.graph.entities) > 0
+
+    def test_read_okf(self) -> None:
+        graph = KnowledgeGraph()
+        graph = graph.add_entity(Entity(name="Python", id="ent_001"))
+        serializer = OKFSerializer()
+        content = serializer.serialize(graph)
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+            f.write(content)
+            fname = f.name
+        knowledge = Knowledge()
+        doc = knowledge.read(fname)
+        assert isinstance(doc, OKFDocument)
+        assert "ent_001" in doc.graph.entities
+
+    def test_read_invalid_file(self) -> None:
+        knowledge = Knowledge()
+        with pytest.raises(ParseError):
+            knowledge.read("/nonexistent/file.md")
+
+    def test_update(self) -> None:
+        knowledge = Knowledge()
+        doc = knowledge.create("Python is a language.", verify=False)
+        doc = knowledge.update(doc, "JavaScript is for web development.", fmt="text")
+        assert len(doc.graph.entities) > 1
+
+    def test_unsupported_source(self) -> None:
+        knowledge = Knowledge()
+        with pytest.raises(UnsupportedSourceError):
+            knowledge.create("https://example.com")
+
+
+class TestOKFDocument:
+    def test_save_and_read(self) -> None:
+        doc = OKFDocument(graph=KnowledgeGraph())
+        doc = doc.update("Python is a language.", "test.md")
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+            fname = f.name
+        doc.save(fname)
+        with open(fname) as f:
+            content = f.read()
+        assert "## Entity:" in content
+        assert "## Fact:" in content
+
+    def test_verify(self) -> None:
+        doc = OKFDocument(graph=KnowledgeGraph())
+        doc = doc.update("Python is great.")
+        result = doc.verify()
+        assert isinstance(result, VerificationResult)
+        assert result.score.overall >= 0
+
+    def test_inspect(self) -> None:
+        doc = OKFDocument(graph=KnowledgeGraph())
+        doc = doc.update("Python is a language.")
+        info = doc.inspect()
+        assert info["entity_count"] > 0
+        assert info["fact_count"] > 0
+        assert info["verification_score"] == 0.0  # not yet verified
+
+    def test_score(self) -> None:
+        doc = OKFDocument(graph=KnowledgeGraph())
+        doc = doc.update("Python is a language.")
+        score = doc.score()
+        assert isinstance(score, KnowledgeScore)
+        assert score.overall >= 0
+
+    def test_diff(self) -> None:
+        doc_a = OKFDocument(graph=KnowledgeGraph())
+        doc_a = doc_a.update("Python is a language.")
+        doc_b = OKFDocument(graph=KnowledgeGraph())
+        doc_b = doc_b.update("JavaScript is a language.")
+        changes = doc_a.diff(doc_b)
+        assert isinstance(changes, dict)
+        assert "entities_added" in changes
+
+    def test_merge(self) -> None:
+        doc_a = OKFDocument(graph=KnowledgeGraph())
+        doc_a = doc_a.update("Python is a language.", "a.md")
+        doc_b = OKFDocument(graph=KnowledgeGraph())
+        doc_b = doc_b.update("JavaScript is a language.", "b.md")
+        merged = doc_a.merge(doc_b)
+        assert len(merged.graph.entities) >= len(doc_a.graph.entities)
+
+    def test_delete_entity(self) -> None:
+        graph = KnowledgeGraph()
+        graph = graph.add_entity(Entity(name="Python", id="ent_001"))
+        graph = graph.add_entity(Entity(name="Java", id="ent_002"))
+        doc = OKFDocument(graph=graph)
+        doc = doc.delete(entity_id="ent_001")
+        assert "ent_001" not in doc.graph.entities
+        assert "ent_002" in doc.graph.entities
+
+    def test_delete_relationship(self) -> None:
+        from knowledge.models import Relationship
+
+        graph = KnowledgeGraph()
+        graph = graph.add_relationship(
+            Relationship(source_id="a", target_id="b", relationship_type="uses", id="rel_001")
+        )
+        doc = OKFDocument(graph=graph)
+        doc = doc.delete(relationship_id="rel_001")
+        assert "rel_001" not in doc.graph.relationships
+
+    def test_delete_entity_removes_related_relationships(self) -> None:
+        from knowledge.models import Relationship
+
+        graph = KnowledgeGraph()
+        graph = graph.add_entity(Entity(name="Python", id="ent_001"))
+        graph = graph.add_entity(Entity(name="Java", id="ent_002"))
+        graph = graph.add_relationship(
+            Relationship(
+                source_id="ent_001", target_id="ent_002", relationship_type="uses", id="rel_001"
+            )
+        )
+        doc = OKFDocument(graph=graph)
+        doc = doc.delete(entity_id="ent_001")
+        assert "rel_001" not in doc.graph.relationships
+
+    def test_graph_property(self) -> None:
+        doc = OKFDocument(graph=KnowledgeGraph())
+        assert isinstance(doc.graph, KnowledgeGraph)
+
+    def test_source_property(self) -> None:
+        doc = OKFDocument(graph=KnowledgeGraph(), source="test.md")
+        assert doc.source == "test.md"
