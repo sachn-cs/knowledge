@@ -1,0 +1,26 @@
+site_name: knowledge SDK
+site_description: An open-source Python SDK for Open Knowledge Format (OKF) documents
+repo_url: https://github.com/anomalyco/knowledge
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    scheme: slate
+    primary: indigo
+    accent: indigo
+
+nav:
+  - Home: index.md
+  - Architecture: architecture.md
+  - API Reference: api.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [.]
+          options:
+            show_root_heading: true
+            show_source: true
