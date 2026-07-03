@@ -264,7 +264,7 @@ class Knowledge:
         parser = OKFParser()
         try:
             graph = parser.parse(content)
-        except (ParseError, ValueError, TypeError) as e:
+        except (ParseError, ValueError) as e:
             raise ParseError(f"Failed to parse OKF document: {e}")
 
         return OKFDocument(graph=graph, source=path, engine=self.engine)

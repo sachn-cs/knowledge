@@ -95,10 +95,7 @@ class VerificationEngine:
             FixEvidenceRefsPass(),
             NormalizeConfidencePass(),
         ]:
-            try:
-                self.pass_manager.register(pass_)
-            except ValueError:
-                pass
+            self.pass_manager.register_or_skip(pass_)
 
     def verify(
         self,

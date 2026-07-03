@@ -83,7 +83,7 @@ class ExtensionRegistry:
             for ep in importlib.metadata.entry_points(group=self.ENTRY_POINT_GROUP):
                 try:
                     pass_cls = ep.load()
-                except (importlib.metadata.PackageNotFoundError, TypeError, AttributeError):
+                except (importlib.metadata.PackageNotFoundError, ModuleNotFoundError):
                     continue
                 if isinstance(pass_cls, type) and issubclass(pass_cls, CompilerPass):
                     instance = pass_cls()
@@ -130,11 +130,8 @@ class ExtensionRegistry:
                 continue
             if pid in disabled_set:
                 continue
-            try:
-                instance = pass_cls()
-                pass_manager.register(instance)
+            instance = pass_cls()
+            if pass_manager.register_or_skip(instance):
                 registered.append(pid)
-            except ValueError:
-                pass
 
         return registered

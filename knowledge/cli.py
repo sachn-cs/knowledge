@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import traceback
 
 from knowledge import Knowledge
 from knowledge.okf import OKFSerializer
@@ -226,8 +227,8 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
     try:
         args.func(args)
-    except Exception as e:
-        print(f"Error: {e}", file=sys.stderr)
+    except Exception:
+        traceback.print_exc(file=sys.stderr)
         sys.exit(1)
 
 

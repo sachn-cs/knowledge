@@ -56,8 +56,7 @@ class PassManager:
             pass_: An instance of a CompilerPass subclass.
 
         Raises:
-            ValueError: If the pass has an empty id, no phase,
-                or a duplicate id.
+            ValueError: If the pass has an empty id or no phase.
         """
         if not pass_.id:
             raise ValueError("Pass must have a non-empty id")
@@ -66,6 +65,27 @@ class PassManager:
         if pass_.id in self.passes:
             raise ValueError(f"Pass already registered: {pass_.id}")
         self.passes[pass_.id] = pass_
+
+    def register_or_skip(self, pass_: CompilerPass) -> bool:
+        """Register a pass if not already present.
+
+        Args:
+            pass_: An instance of a CompilerPass subclass.
+
+        Returns:
+            True if the pass was registered, False if skipped (already exists).
+
+        Raises:
+            ValueError: If the pass has an empty id or invalid phase.
+        """
+        if not pass_.id:
+            raise ValueError("Pass must have a non-empty id")
+        if not isinstance(pass_.phase, Phase):
+            raise ValueError(f"Pass {pass_.id} must have a valid phase")
+        if pass_.id in self.passes:
+            return False
+        self.passes[pass_.id] = pass_
+        return True
 
     def resolve_order(self, phases: list[Phase] | None = None) -> list[str]:
         """Resolve a topological execution order.

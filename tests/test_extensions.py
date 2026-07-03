@@ -71,7 +71,7 @@ class TestExtensionRegistry:
         with mock.patch("importlib.metadata.entry_points") as mock_ep:
             mock_ep.return_value = [
                 mock.MagicMock(load=mock.MagicMock(return_value=SimplePass)),
-                mock.MagicMock(load=mock.MagicMock(side_effect=TypeError("bad entry"))),
+                mock.MagicMock(load=mock.MagicMock(side_effect=ModuleNotFoundError("bad entry"))),
             ]
             discovered = registry.discover()
             assert "test.simple_pass" in discovered
