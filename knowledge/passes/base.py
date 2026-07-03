@@ -17,6 +17,26 @@ from knowledge.models import KnowledgeGraph
 from knowledge.passes.diagnostics import Diagnostic
 
 
+class KnowledgeScore(BaseModel, frozen=True):
+    """Quality scores for a KnowledgeGraph.
+
+    Attributes:
+        overall: Overall quality score (0.0 to 1.0).
+        completeness: Score representing how complete the graph is.
+        consistency: Score representing internal consistency.
+        evidence_quality: Quality score for supporting evidence.
+        ontology_quality: Quality score for ontology adherence.
+        metadata_completeness: Score for metadata coverage.
+    """
+
+    overall: float = 0.0
+    completeness: float = 0.0
+    consistency: float = 0.0
+    evidence_quality: float = 0.0
+    ontology_quality: float = 0.0
+    metadata_completeness: float = 0.0
+
+
 class Phase(str, Enum):
     """The execution phase of a compiler pass.
 
@@ -42,10 +62,25 @@ class PassResult(BaseModel, frozen=True):
     Contains the (possibly modified) KnowledgeGraph along with any
     diagnostics the pass produced. Passes that only validate return
     the graph unmodified with diagnostics attached.
+
+    Attributes:
+        graph: The (possibly modified) KnowledgeGraph.
+        diagnostics: Diagnostics produced during execution.
+        score: Optional quality score from scoring passes.
+        repairs_applied: Number of repairs performed.
     """
 
     graph: KnowledgeGraph
     diagnostics: list[Diagnostic] = Field(default_factory=list)
+    score: KnowledgeScore | None = None
+    repairs_applied: int = 0
+
+
+VALID_RELATIONSHIP_TYPES: frozenset[str] = frozenset({
+    "uses", "depends_on", "extends", "implements", "part_of",
+    "contains", "creates", "manages", "requires", "supports",
+    "provides", "enables", "integrates_with", "references", "related_to",
+})
 
 
 class CompilerPass(ABC):
