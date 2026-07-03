@@ -16,9 +16,9 @@ from knowledge.passes import (
     Diagnostic,
     PassManager,
     Phase,
-    PipelineResult,
 )
-from knowledge.passes.scoring_pass import KnowledgeScore, ScoringPass
+from knowledge.passes.base import KnowledgeScore
+from knowledge.passes.scoring_pass import ScoringPass
 
 
 class VerificationResult(BaseModel, frozen=True):
@@ -52,12 +52,20 @@ class VerificationEngine:
     repair_phases: list[Phase] = field(default_factory=lambda: [Phase.REPAIR])
     verification_phases: list[Phase] = field(
         default_factory=lambda: [
+            Phase.ANALYSIS,
             Phase.VERIFICATION,
             Phase.SCORING,
         ]
     )
 
-    def _setup_default_passes(self) -> None:
+    def setup_default_passes(self) -> None:
+        """Register the default set of compiler passes.
+
+        Registers schema validation, structural validation, consistency
+        validation, scoring, and repair passes. Silently skips any
+        pass that is already registered.
+        """
+        from knowledge.passes.analysis_pass import GraphStatisticsPass
         from knowledge.passes.consistency_pass import ConsistencyValidationPass
         from knowledge.passes.repair_passes import (
             AttachProvenancePass,
@@ -67,11 +75,20 @@ class VerificationEngine:
         )
         from knowledge.passes.schema_pass import SchemaValidationPass
         from knowledge.passes.structural_pass import StructuralValidationPass
+        from knowledge.passes.verification_passes import (
+            EvidenceValidationPass,
+            OntologyValidationPass,
+            SemanticValidationPass,
+        )
 
         for pass_ in [
+            GraphStatisticsPass(),
             SchemaValidationPass(),
             StructuralValidationPass(),
             ConsistencyValidationPass(),
+            SemanticValidationPass(),
+            EvidenceValidationPass(),
+            OntologyValidationPass(),
             ScoringPass(),
             MergeDuplicateEntitiesPass(),
             AttachProvenancePass(),
@@ -90,8 +107,25 @@ class VerificationEngine:
         threshold: float | None = None,
         max_iterations: int | None = None,
     ) -> VerificationResult:
+        """Run the full verification lifecycle.
+
+        Iteratively validates, diagnoses, repairs, and rescored the
+        knowledge graph until convergence or max iterations.
+
+        Args:
+            graph: The knowledge graph to verify.
+            config: Optional pass-specific configuration.
+            threshold: Quality threshold (0-100). Defaults to
+                ``self.quality_threshold``.
+            max_iterations: Maximum verification iterations.
+                Defaults to ``self.max_iterations``.
+
+        Returns:
+            A VerificationResult with the final graph, diagnostics,
+            scores, and convergence metadata.
+        """
         if not self.pass_manager.registered_ids:
-            self._setup_default_passes()
+            self.setup_default_passes()
 
         threshold = threshold if threshold is not None else self.quality_threshold
         max_iterations = max_iterations if max_iterations is not None else self.max_iterations
@@ -106,8 +140,7 @@ class VerificationEngine:
             )
             all_diagnostics.extend(v_result.diagnostics)
 
-            # Extract score
-            score = self._extract_score(v_result)
+            score = v_result.score or KnowledgeScore()
             if score.overall >= threshold:
                 return VerificationResult(
                     graph=v_result.graph,
@@ -123,16 +156,11 @@ class VerificationEngine:
             r_result = self.pass_manager.execute(
                 v_result.graph, config=config, phases=self.repair_phases
             )
-            repairs_this = sum(
-                1 for d in r_result.diagnostics
-                if d.severity.name != "INFORMATION"
-            )
-            total_repairs += repairs_this if repairs_this > 0 else len(r_result.diagnostics)
+            total_repairs += r_result.total_repairs
             all_diagnostics.extend(r_result.diagnostics)
 
-            # Check convergence — if no change, stop
             if r_result.graph == current_graph:
-                final_score = self._compute_final_score(r_result.graph)
+                final_score = self.compute_final_score(r_result.graph)
                 return VerificationResult(
                     graph=r_result.graph,
                     score=final_score,
@@ -146,7 +174,7 @@ class VerificationEngine:
             current_graph = r_result.graph
 
         # Max iterations reached
-        final_score = self._compute_final_score(current_graph)
+        final_score = self.compute_final_score(current_graph)
         return VerificationResult(
             graph=current_graph,
             score=final_score,
@@ -157,45 +185,18 @@ class VerificationEngine:
             threshold_met=final_score.overall >= threshold,
         )
 
-    def _extract_score(self, result: PipelineResult) -> KnowledgeScore:
-        for d in result.diagnostics:
-            if d.location == "scoring.quality" and d.severity.name == "INFORMATION":
-                prefix = "Quality score: "
-                msg = d.message[len(prefix):] if d.message.startswith(prefix) else d.message
-                scores = {}
-                for part in msg.split(", "):
-                    if "=" in part:
-                        key, val = part.split("=", 1)
-                        scores[key.strip()] = float(val.replace("%", "").strip())
-                return KnowledgeScore(
-                    overall=scores.get("overall", 0.0),
-                    completeness=scores.get("completeness", 0.0),
-                    consistency=scores.get("consistency", 0.0),
-                    evidence_quality=scores.get("evidence", 0.0),
-                    ontology_quality=scores.get("ontology", 0.0),
-                    metadata_completeness=scores.get("metadata", 0.0),
-                )
-        return KnowledgeScore()
-
     @staticmethod
-    def _compute_final_score(graph: KnowledgeGraph) -> KnowledgeScore:
+    def compute_final_score(graph: KnowledgeGraph) -> KnowledgeScore:
+        """Compute the final quality score for a graph.
 
+        Runs a standalone ScoringPass to produce an independent
+        quality assessment after the verification loop ends.
+
+        Args:
+            graph: The knowledge graph to score.
+
+        Returns:
+            A KnowledgeScore with quality metrics.
+        """
         result = ScoringPass().execute(graph)
-        for d in result.diagnostics:
-            if d.location == "scoring.quality":
-                prefix = "Quality score: "
-                msg = d.message[len(prefix):] if d.message.startswith(prefix) else d.message
-                scores = {}
-                for part in msg.split(", "):
-                    if "=" in part:
-                        key, val = part.split("=", 1)
-                        scores[key.strip()] = float(val.replace("%", "").strip())
-                return KnowledgeScore(
-                    overall=scores.get("overall", 0.0),
-                    completeness=scores.get("completeness", 0.0),
-                    consistency=scores.get("consistency", 0.0),
-                    evidence_quality=scores.get("evidence", 0.0),
-                    ontology_quality=scores.get("ontology", 0.0),
-                    metadata_completeness=scores.get("metadata", 0.0),
-                )
-        return KnowledgeScore()
+        return result.score or KnowledgeScore()
