@@ -133,9 +133,8 @@ class TestSemanticValidationPass:
         passer = PassManager()
         passer.register(SemanticValidationPass())
         result = passer.execute(graph, phases=[Phase.VERIFICATION])
-        errors = [d for d in result.diagnostics if d.severity == Severity.ERROR]
-        assert any("unknown source" in d.message for d in errors)
-        assert any("unknown target" in d.message for d in errors)
+        # Relationship ref checks are now in StructuralValidationPass
+        assert len(result.diagnostics) == 0
 
     def test_empty_graph(self) -> None:
         passer = PassManager()
@@ -267,9 +266,10 @@ class TestEvidenceValidationPass:
         passer.register(SemanticValidationPass())
         passer.register(EvidenceValidationPass())
         result = passer.execute(graph, phases=[Phase.VERIFICATION])
+        # Fact-without-evidence warnings are from SemanticValidationPass
         evidence_warnings = [
             d for d in result.diagnostics
-            if "no evidence" in d.message.lower()
+            if "no supporting evidence" in d.message.lower()
         ]
         assert len(evidence_warnings) >= 1
 
@@ -300,9 +300,8 @@ class TestVerificationPipelineIntegration:
         )
 
         result = passer.execute(graph, phases=[Phase.VERIFICATION])
-        assert len(result.diagnostics) > 0
+        assert len(result.diagnostics) >= 3  # fact, provenance, unknown type warnings
         assert len(result.executed) == 3
-        # Verify dependency order: semantic → evidence → ontology
         assert result.executed == [
             "verification.semantic",
             "verification.evidence",

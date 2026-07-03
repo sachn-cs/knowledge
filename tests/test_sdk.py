@@ -26,7 +26,7 @@ class TestKnowledge:
         knowledge = Knowledge()
         doc = knowledge.create("Python is a language.", verify=True)
         assert isinstance(doc, OKFDocument)
-        assert doc._last_verification is not None
+        assert doc.last_verification is not None
 
     def test_create_from_file(self) -> None:
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
@@ -92,7 +92,7 @@ class TestOKFDocument:
         info = doc.inspect()
         assert info["entity_count"] > 0
         assert info["fact_count"] > 0
-        assert info["verification_score"] == 0.0  # not yet verified
+        assert info["verification_score"] > 0  # verified after update
 
     def test_score(self) -> None:
         doc = OKFDocument(graph=KnowledgeGraph())

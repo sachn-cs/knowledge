@@ -448,3 +448,39 @@ class TestPassManager:
         mgr.register(Pass2())
         order = mgr.resolve_order()
         assert order.index("pass1") < order.index("pass2") < order.index("pass3")
+
+
+class TestGraphStatisticsPass:
+    def test_empty_graph(self) -> None:
+        from knowledge.passes.analysis_pass import GraphStatisticsPass
+
+        result = GraphStatisticsPass().execute(KnowledgeGraph())
+        info = [d for d in result.diagnostics if "0 total elements" in d.message]
+        assert len(info) == 1
+
+    def test_reports_counts(self) -> None:
+        from knowledge.passes.analysis_pass import GraphStatisticsPass
+
+        graph = KnowledgeGraph()
+        graph = graph.add_entity(Entity(name="Python", id="e1"))
+        graph = graph.add_entity(Entity(name="Java", id="e2"))
+        result = GraphStatisticsPass().execute(graph)
+        info = [d for d in result.diagnostics if "total elements" in d.message]
+        assert len(info) == 1
+        assert "2 entities" in info[0].message
+
+    def test_detects_isolated_entities(self) -> None:
+        from knowledge.models import Relationship
+        from knowledge.passes.analysis_pass import GraphStatisticsPass
+
+        graph = KnowledgeGraph()
+        graph = graph.add_entity(Entity(name="Python", id="e1"))
+        graph = graph.add_entity(Entity(name="Java", id="e2"))
+        graph = graph.add_relationship(
+            Relationship(source_id="e1", target_id="e2", relationship_type="uses", id="r1")
+        )
+        graph = graph.add_entity(Entity(name="Rust", id="e3"))
+        result = GraphStatisticsPass().execute(graph)
+        isolated = [d for d in result.diagnostics if "no relationships" in d.message]
+        assert len(isolated) == 1
+        assert "1 of 3" in isolated[0].message

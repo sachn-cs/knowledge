@@ -393,13 +393,67 @@ class TestOKFRoundTrip:
             OKFParser().parse("## Widget: w1\n- **name**: test\n")
 
 
+class TestProvenanceMetadataRoundTrip:
+    def test_round_trip_provenance(self) -> None:
+        from knowledge.models import Provenance
+
+        prov = Provenance(
+            source_id="src_001", extractor="test_extractor", verification_cycle="vc_1"
+        )
+        entity = Entity(id="e1", name="Test", provenance=prov)
+        graph = KnowledgeGraph().add_entity(entity)
+        okf = OKFSerializer().serialize(graph)
+        restored = OKFParser().parse(okf)
+        rp = restored.entities["e1"].provenance
+        assert rp is not None
+        assert rp.source_id == "src_001"
+        assert rp.extractor == "test_extractor"
+        assert rp.verification_cycle == "vc_1"
+
+    def test_round_trip_metadata_tags(self) -> None:
+        from knowledge.models import Metadata
+
+        meta = Metadata(tags=["ai", "knowledge"], version=2)
+        entity = Entity(id="e1", name="Test", metadata=meta)
+        graph = KnowledgeGraph().add_entity(entity)
+        okf = OKFSerializer().serialize(graph)
+        restored = OKFParser().parse(okf)
+        rm = restored.entities["e1"].metadata
+        assert rm.tags == ["ai", "knowledge"]
+        assert rm.version == 2
+
+    def test_round_trip_provenance_and_metadata(self) -> None:
+        from knowledge.models import Metadata, Provenance
+
+        prov = Provenance(source_id="src_001", extractor="ext")
+        meta = Metadata(tags=["test"])
+        entity = Entity(id="e1", name="Test", provenance=prov, metadata=meta)
+        graph = KnowledgeGraph().add_entity(entity)
+        okf = OKFSerializer().serialize(graph)
+        restored = OKFParser().parse(okf)
+        assert restored.entities["e1"].provenance is not None
+        assert restored.entities["e1"].provenance.source_id == "src_001"
+        assert restored.entities["e1"].metadata.tags == ["test"]
+
+    def test_omits_provenance_when_missing(self) -> None:
+        entity = Entity(id="e1", name="Test")
+        graph = KnowledgeGraph().add_entity(entity)
+        okf = OKFSerializer().serialize(graph)
+        assert "provenance_source" not in okf
+        restored = OKFParser().parse(okf)
+        assert restored.entities["e1"].provenance is None
+
+
 def _semantic_dump(graph: KnowledgeGraph) -> dict:
-    """Strip ephemeral metadata fields for semantic comparison."""
+    """Strip ephemeral timestamp fields for semantic comparison."""
     data = graph.model_dump()
     for collection in data.values():
         for obj in collection.values():
-            obj.pop("metadata", None)
-            obj.pop("provenance", None)
+            if "metadata" in obj and obj["metadata"] is not None:
+                obj["metadata"].pop("created_at", None)
+                obj["metadata"].pop("updated_at", None)
+            if "provenance" in obj and obj["provenance"] is not None:
+                obj["provenance"].pop("extracted_at", None)
     return data
 
 

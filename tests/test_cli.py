@@ -2,35 +2,29 @@
 
 import tempfile
 
-from knowledge.cli import main as cli_main
+from knowledge.cli import build_parser
 from knowledge.models import Entity, KnowledgeGraph
 from knowledge.okf import OKFSerializer
 
 
-def _run_cli(args: list[str]) -> None:
-    """Run the CLI with given args, capturing SystemExit."""
-    try:
-        # We can't easily capture output, so just test that it doesn't crash
-        import sys
-        old_argv = sys.argv
-        sys.argv = ["knowledge"] + args
-        cli_main()
-        sys.argv = old_argv
-    except SystemExit:
-        pass
+def _run_cmd(args: list[str]) -> None:
+    """Run a CLI command by parsing args and calling the handler directly."""
+    parser = build_parser()
+    parsed = parser.parse_args(args)
+    parsed.func(parsed)
 
 
 class TestCLICommands:
     def test_create_text(self) -> None:
-        _run_cli(["create", "Python is a language.", "--no-verify"])
+        _run_cmd(["create", "Python is a language.", "--no-verify"])
 
     def test_create_markdown(self) -> None:
-        _run_cli(["create", "Python is a language.", "-f", "markdown", "--no-verify"])
+        _run_cmd(["create", "Python is a language.", "-f", "markdown", "--no-verify"])
 
     def test_create_with_output(self) -> None:
         with tempfile.NamedTemporaryFile(suffix=".md", delete=False) as f:
             fname = f.name
-        _run_cli(["create", "Python is a language.", "-o", fname, "--no-verify"])
+        _run_cmd(["create", "Python is a language.", "-o", fname, "--no-verify"])
 
     def test_read(self) -> None:
         graph = KnowledgeGraph()
@@ -40,7 +34,7 @@ class TestCLICommands:
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             fname = f.name
-        _run_cli(["read", fname])
+        _run_cmd(["read", fname])
 
     def test_inspect(self) -> None:
         graph = KnowledgeGraph()
@@ -50,7 +44,7 @@ class TestCLICommands:
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             fname = f.name
-        _run_cli(["inspect", fname])
+        _run_cmd(["inspect", fname])
 
     def test_score(self) -> None:
         graph = KnowledgeGraph()
@@ -60,7 +54,7 @@ class TestCLICommands:
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             fname = f.name
-        _run_cli(["score", fname])
+        _run_cmd(["score", fname])
 
     def test_verify(self) -> None:
         graph = KnowledgeGraph()
@@ -70,7 +64,7 @@ class TestCLICommands:
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             fname = f.name
-        _run_cli(["verify", fname])
+        _run_cmd(["verify", fname])
 
     def test_diff(self) -> None:
         graph_a = KnowledgeGraph()
@@ -86,7 +80,7 @@ class TestCLICommands:
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content_b)
             fname_b = f.name
-        _run_cli(["diff", fname_a, fname_b])
+        _run_cmd(["diff", fname_a, fname_b])
 
     def test_update(self) -> None:
         graph = KnowledgeGraph()
@@ -96,14 +90,11 @@ class TestCLICommands:
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
             fname = f.name
-        _run_cli(["update", fname, "JavaScript is a language."])
+        _run_cmd(["update", fname, "JavaScript is a language."])
 
     def test_unknown_command(self) -> None:
+        parser = build_parser()
         try:
-            import sys
-            old_argv = sys.argv
-            sys.argv = ["knowledge", "unknown_command"]
-            cli_main()
-            sys.argv = old_argv
+            parser.parse_args(["unknown_command"])
         except SystemExit:
             pass
