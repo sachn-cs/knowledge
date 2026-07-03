@@ -61,6 +61,17 @@ class DuplicateDetector:
             update={"concepts": {c.id: c for c in seen.values()}}
         )
 
+    def resolve(self, graph: KnowledgeGraph) -> KnowledgeGraph:
+        """Alias compatibility: delegating to deduplicate_entities.
+
+        Args:
+            graph: The knowledge graph to process.
+
+        Returns:
+            KnowledgeGraph with entity aliases merged.
+        """
+        return self.deduplicate_entities(graph)
+
     def deduplicate_all(self, graph: KnowledgeGraph) -> KnowledgeGraph:
         graph = self.deduplicate_entities(graph)
         graph = self.deduplicate_concepts(graph)

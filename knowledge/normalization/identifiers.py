@@ -58,3 +58,18 @@ class CanonicalIdGenerator:
     @staticmethod
     def fact_id(statement: str) -> str:
         return CanonicalIdGenerator.generate("fact", statement)
+
+    @staticmethod
+    def relationship_id(source: str, rel_type: str, target: str) -> str:
+        """Generate a deterministic relationship ID from its parts."""
+        return CanonicalIdGenerator.generate("rel", f"{source}:{rel_type}:{target}")
+
+    @staticmethod
+    def evidence_id(content: str) -> str:
+        """Generate a deterministic evidence ID from content."""
+        return CanonicalIdGenerator.generate("ev", content)
+
+    @staticmethod
+    def source_id(source: str) -> str:
+        """Generate a deterministic source ID."""
+        return CanonicalIdGenerator.generate("src", source)
