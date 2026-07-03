@@ -10,7 +10,7 @@ from knowledge import Knowledge
 knowledge = Knowledge()
 ```
 
-### `create(input, verify=True, fmt=None)`
+### `create(input, fmt="text", verify=True)`
 
 Creates a new OKF document from a knowledge source.
 
@@ -19,8 +19,8 @@ Creates a new OKF document from a knowledge source.
 | Name | Type | Description |
 |---|---|---|
 | `input` | `str` | File path or text content. File paths are auto-detected. |
+| `fmt` | `str` | Source format (`"text"`, `"markdown"`). Default: `"text"` |
 | `verify` | `bool` | Run verification after creation. Default: `True` |
-| `fmt` | `str or None` | Source format override (`"text"`, `"markdown"`). Auto-detected when `None`. |
 
 **Returns:** `OKFDocument`
 
@@ -50,7 +50,7 @@ Loads an existing OKF Markdown document from disk.
 doc = knowledge.read("knowledge.md")
 ```
 
-### `update(okf, input, fmt=None)`
+### `update(doc, input, fmt="text", verify=True)`
 
 Updates an existing OKF document with additional knowledge.
 
@@ -58,14 +58,119 @@ Updates an existing OKF document with additional knowledge.
 
 | Name | Type | Description |
 |---|---|---|
-| `okf` | `OKFDocument` | The document to update. |
+| `doc` | `OKFDocument` | The document to update. |
 | `input` | `str` | New knowledge source (file path or text). |
-| `fmt` | `str or None` | Source format override. |
+| `fmt` | `str` | Source format (`"text"`, `"markdown"`). Default: `"text"` |
+| `verify` | `bool` | Run verification after update. Default: `True` |
 
 **Returns:** `OKFDocument` (new instance)
 
 ```python
 updated = knowledge.update(doc, "JavaScript is for web development.")
+```
+
+### `verify(doc, threshold=80.0, max_iterations=5)`
+
+Verifies an existing OKF document.
+
+**Parameters:**
+
+| Name | Type | Description |
+|---|---|---|
+| `doc` | `OKFDocument` | The document to verify. |
+| `threshold` | `float` | Quality threshold (0–100). Default: `80.0` |
+| `max_iterations` | `int` | Maximum verification iterations. Default: `5` |
+
+**Returns:** `VerificationResult`
+
+```python
+result = knowledge.verify(doc, threshold=95.0)
+```
+
+### `delete(doc, entity_id=None, relationship_id=None, fact_id=None, concept_id=None)`
+
+Removes knowledge elements from a document.
+
+**Parameters:**
+
+| Name | Type | Description |
+|---|---|---|
+| `doc` | `OKFDocument` | The document to delete from. |
+| `entity_id` | `str or None` | Entity ID to remove. |
+| `relationship_id` | `str or None` | Relationship ID to remove. |
+| `fact_id` | `str or None` | Fact ID to remove. |
+| `concept_id` | `str or None` | Concept ID to remove. |
+
+**Returns:** `OKFDocument` (new instance)
+
+```python
+updated = knowledge.delete(doc, entity_id="ent_001")
+```
+
+### `inspect(doc)`
+
+Returns a high-level overview of a document.
+
+**Parameters:**
+
+| Name | Type | Description |
+|---|---|---|
+| `doc` | `OKFDocument` | The document to inspect. |
+
+**Returns:** `dict`
+
+```python
+info = knowledge.inspect(doc)
+```
+
+### `score(doc)`
+
+Computes document quality scores.
+
+**Parameters:**
+
+| Name | Type | Description |
+|---|---|---|
+| `doc` | `OKFDocument` | The document to score. |
+
+**Returns:** `KnowledgeScore`
+
+```python
+score = knowledge.score(doc)
+```
+
+### `diff(a, b)`
+
+Computes semantic differences between two documents.
+
+**Parameters:**
+
+| Name | Type | Description |
+|---|---|---|
+| `a` | `OKFDocument` | First document. |
+| `b` | `OKFDocument` | Second document. |
+
+**Returns:** `dict`
+
+```python
+changes = knowledge.diff(doc_a, doc_b)
+```
+
+### `merge(a, b)`
+
+Merges two documents into one.
+
+**Parameters:**
+
+| Name | Type | Description |
+|---|---|---|
+| `a` | `OKFDocument` | Primary document. |
+| `b` | `OKFDocument` | Document to merge in. |
+
+**Returns:** `OKFDocument` (new instance)
+
+```python
+merged = knowledge.merge(doc_a, doc_b)
 ```
 
 ---
@@ -76,13 +181,13 @@ The primary object returned by the SDK. All operations produce new instances.
 
 ### `graph`
 
-The underlying `KnowledgeGraph`. Read-only.
+The underlying `KnowledgeGraph`.
 
 ### `source`
 
 The source identifier (file path or `None`).
 
-### `verify(threshold=80.0)`
+### `verify(threshold=80.0, max_iterations=5)`
 
 Runs the verification engine.
 
@@ -91,6 +196,7 @@ Runs the verification engine.
 | Name | Type | Description |
 |---|---|---|
 | `threshold` | `float` | Quality threshold (0–100). Default: `80.0` |
+| `max_iterations` | `int` | Maximum verification iterations. Default: `5` |
 
 **Returns:** `VerificationResult`
 
@@ -171,7 +277,7 @@ from both documents are preserved.
 merged = doc_a.merge(doc_b)
 ```
 
-### `update(input, source=None, verify=False)`
+### `update(content, source="unknown", fmt="text", verify=True)`
 
 Updates the document with new knowledge content.
 
@@ -179,17 +285,18 @@ Updates the document with new knowledge content.
 
 | Name | Type | Description |
 |---|---|---|
-| `input` | `str` | Text content to update from. |
-| `source` | `str or None` | Optional source identifier. |
-| `verify` | `bool` | Run verification after update. Default: `False` |
+| `content` | `str` | Text content to extract knowledge from. |
+| `source` | `str` | Source identifier for provenance. Default: `"unknown"` |
+| `fmt` | `str` | Input format (`"text"`, `"markdown"`). Default: `"text"` |
+| `verify` | `bool` | Run verification after update. Default: `True` |
 
 **Returns:** `OKFDocument` (new instance)
 
 ```python
-updated = doc.update("New information to add.", "chapter2.md")
+updated = doc.update("New information to add.", source="chapter2.md")
 ```
 
-### `delete(entity_id=None, relationship_id=None, fact_id=None)`
+### `delete(entity_id=None, relationship_id=None, fact_id=None, concept_id=None)`
 
 Removes knowledge safely. Dependent references are repaired automatically.
 
@@ -200,6 +307,7 @@ Removes knowledge safely. Dependent references are repaired automatically.
 | `entity_id` | `str or None` | Entity ID to remove. |
 | `relationship_id` | `str or None` | Relationship ID to remove. |
 | `fact_id` | `str or None` | Fact ID to remove. |
+| `concept_id` | `str or None` | Concept ID to remove. |
 
 **Returns:** `OKFDocument` (new instance)
 

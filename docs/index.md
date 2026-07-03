@@ -1,18 +1,19 @@
 # knowledge SDK
 
-**Knowledge is software.**
+**A Python package for knowledge engineering.**
 
 `knowledge` is an open-source Python SDK for creating, maintaining, verifying, and
 evolving **Open Knowledge Format (OKF)** documents.
 
 Unlike traditional document generation tools, `knowledge` treats an OKF document
-as a **living software artifact** — structured, versioned, verified, and
+as a **living artifact** — structured, versioned, verified, and
 continuously improvable.
 
 ## Installation
 
 ```bash
-pip install knowledge-sdk
+# Not yet on PyPI — install from source:
+pip install git+https://github.com/sachn-cs/knowledge.git
 ```
 
 ## Quick Start
@@ -34,7 +35,7 @@ okf.save("knowledge.md")
 - **Verification Engine** — The iterative quality gate for all knowledge mutations. Validates, diagnoses, repairs, and rescores.
 - **Compiler Passes** — Independent, composable transformation and validation steps with explicit dependencies.
 
-## Status — v0.1.0
+## Status — v0.1.0 (pre-release)
 
 | Milestone | Status |
 |---|---|

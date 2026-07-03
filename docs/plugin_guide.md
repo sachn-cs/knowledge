@@ -93,7 +93,7 @@ disabled_passes = [
 ## Example: Custom Scoring Pass
 
 ```python
-from knowledge.passes import CompassPass, PassResult, Phase, Diagnostic, Severity
+from knowledge.passes import CompilerPass, PassResult, Phase, Diagnostic, Severity
 
 class CoverageScoringPass(CompilerPass):
     id = "scoring.coverage"
