@@ -18,7 +18,7 @@ from knowledge.passes import (
     Phase,
 )
 from knowledge.passes.base import KnowledgeScore
-from knowledge.passes.scoring_pass import ScoringPass
+from knowledge.passes.scoring import ScoringPass
 
 
 class VerificationResult(BaseModel, frozen=True):
@@ -65,17 +65,17 @@ class VerificationEngine:
         validation, scoring, and repair passes. Silently skips any
         pass that is already registered.
         """
-        from knowledge.passes.analysis_pass import GraphStatisticsPass
-        from knowledge.passes.consistency_pass import ConsistencyValidationPass
-        from knowledge.passes.repair_passes import (
+        from knowledge.passes.analysis import GraphStatisticsPass
+        from knowledge.passes.consistency import ConsistencyValidationPass
+        from knowledge.passes.repair import (
             AttachProvenancePass,
             FixEvidenceRefsPass,
             MergeDuplicateEntitiesPass,
             NormalizeConfidencePass,
         )
-        from knowledge.passes.schema_pass import SchemaValidationPass
-        from knowledge.passes.structural_pass import StructuralValidationPass
-        from knowledge.passes.verification_passes import (
+        from knowledge.passes.schema import SchemaValidationPass
+        from knowledge.passes.structural import StructuralValidationPass
+        from knowledge.passes.verification import (
             EvidenceValidationPass,
             OntologyValidationPass,
             SemanticValidationPass,

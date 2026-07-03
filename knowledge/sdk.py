@@ -106,7 +106,7 @@ class OKFDocument:
         Returns:
             KnowledgeScore with overall and per-dimension quality metrics.
         """
-        from knowledge.passes.scoring_pass import ScoringPass
+        from knowledge.passes.scoring import ScoringPass
 
         result = ScoringPass().execute(self.graph)
         return result.score or KnowledgeScore()

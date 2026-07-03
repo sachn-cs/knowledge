@@ -8,7 +8,7 @@ from knowledge.passes import (
     ScoringPass,
     StructuralValidationPass,
 )
-from knowledge.passes.repair_passes import (
+from knowledge.passes.repair import (
     AttachProvenancePass,
     FixEvidenceRefsPass,
     MergeDuplicateEntitiesPass,

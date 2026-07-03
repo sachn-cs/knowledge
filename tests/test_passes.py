@@ -21,7 +21,7 @@ from knowledge.passes import (
     Phase,
     Severity,
 )
-from knowledge.passes.scoring_pass import ScoringPass
+from knowledge.passes.scoring import ScoringPass
 
 
 class TestPhase:
@@ -460,14 +460,14 @@ class TestPassManager:
 
 class TestGraphStatisticsPass:
     def test_empty_graph(self) -> None:
-        from knowledge.passes.analysis_pass import GraphStatisticsPass
+        from knowledge.passes.analysis import GraphStatisticsPass
 
         result = GraphStatisticsPass().execute(KnowledgeGraph())
         info = [d for d in result.diagnostics if "0 total elements" in d.message]
         assert len(info) == 1
 
     def test_reports_counts(self) -> None:
-        from knowledge.passes.analysis_pass import GraphStatisticsPass
+        from knowledge.passes.analysis import GraphStatisticsPass
 
         graph = KnowledgeGraph()
         graph = graph.add_entity(Entity(name="Python", id="e1"))
@@ -479,7 +479,7 @@ class TestGraphStatisticsPass:
 
     def test_detects_isolated_entities(self) -> None:
         from knowledge.models import Relationship
-        from knowledge.passes.analysis_pass import GraphStatisticsPass
+        from knowledge.passes.analysis import GraphStatisticsPass
 
         graph = KnowledgeGraph()
         graph = graph.add_entity(Entity(name="Python", id="e1"))
@@ -496,7 +496,7 @@ class TestGraphStatisticsPass:
 
 class TestSchemaValidationPass:
     def test_empty_entity_name(self) -> None:
-        from knowledge.passes.schema_pass import SchemaValidationPass
+        from knowledge.passes.schema import SchemaValidationPass
 
         graph = KnowledgeGraph().add_entity(Entity(name="", id="e1"))
         result = SchemaValidationPass().execute(graph)
@@ -504,7 +504,7 @@ class TestSchemaValidationPass:
         assert any("empty name" in d.message for d in errors)
 
     def test_empty_concept_name(self) -> None:
-        from knowledge.passes.schema_pass import SchemaValidationPass
+        from knowledge.passes.schema import SchemaValidationPass
 
         graph = KnowledgeGraph().add_concept(Concept(name="", id="c1"))
         result = SchemaValidationPass().execute(graph)
@@ -512,7 +512,7 @@ class TestSchemaValidationPass:
         assert any("empty name" in d.message for d in errors)
 
     def test_empty_fact_statement(self) -> None:
-        from knowledge.passes.schema_pass import SchemaValidationPass
+        from knowledge.passes.schema import SchemaValidationPass
 
         graph = KnowledgeGraph().add_fact(Fact(statement="", id="f1"))
         result = SchemaValidationPass().execute(graph)
@@ -520,7 +520,7 @@ class TestSchemaValidationPass:
         assert any("empty statement" in d.message for d in errors)
 
     def test_empty_relationship_fields(self) -> None:
-        from knowledge.passes.schema_pass import SchemaValidationPass
+        from knowledge.passes.schema import SchemaValidationPass
 
         r1 = Relationship(source_id="", target_id="b", relationship_type="uses", id="r1")
         r2 = Relationship(source_id="a", target_id="", relationship_type="uses", id="r2")
@@ -533,7 +533,7 @@ class TestSchemaValidationPass:
         assert any("empty relationship_type" in d.message for d in errors)
 
     def test_empty_evidence_fields(self) -> None:
-        from knowledge.passes.schema_pass import SchemaValidationPass
+        from knowledge.passes.schema import SchemaValidationPass
 
         graph = (
             KnowledgeGraph()
@@ -547,7 +547,7 @@ class TestSchemaValidationPass:
         assert any("empty source" in d.message for d in warnings)
 
     def test_cross_collection_duplicate_ids(self) -> None:
-        from knowledge.passes.schema_pass import SchemaValidationPass
+        from knowledge.passes.schema import SchemaValidationPass
 
         graph = (
             KnowledgeGraph()
@@ -559,7 +559,7 @@ class TestSchemaValidationPass:
         assert any("Duplicate id" in d.message for d in errors)
 
     def test_valid_graph_passes_clean(self) -> None:
-        from knowledge.passes.schema_pass import SchemaValidationPass
+        from knowledge.passes.schema import SchemaValidationPass
 
         rel = Relationship(source_id="e1", target_id="e1", relationship_type="uses", id="r1")
         graph = (
@@ -576,7 +576,7 @@ class TestSchemaValidationPass:
 
 class TestStructuralValidationPass:
     def test_orphaned_relationship_source(self) -> None:
-        from knowledge.passes.structural_pass import StructuralValidationPass
+        from knowledge.passes.structural import StructuralValidationPass
 
         rel = Relationship(source_id="ghost", target_id="e1", relationship_type="uses", id="r1")
         graph = KnowledgeGraph().add_entity(Entity(name="Python", id="e1")).add_relationship(rel)
@@ -585,7 +585,7 @@ class TestStructuralValidationPass:
         assert any("source" in d.message and "not found" in d.message for d in errors)
 
     def test_orphaned_relationship_target(self) -> None:
-        from knowledge.passes.structural_pass import StructuralValidationPass
+        from knowledge.passes.structural import StructuralValidationPass
 
         rel = Relationship(source_id="e1", target_id="ghost", relationship_type="uses", id="r1")
         graph = KnowledgeGraph().add_entity(Entity(name="Python", id="e1")).add_relationship(rel)
@@ -594,7 +594,7 @@ class TestStructuralValidationPass:
         assert any("target" in d.message and "not found" in d.message for d in errors)
 
     def test_duplicate_aliases(self) -> None:
-        from knowledge.passes.structural_pass import StructuralValidationPass
+        from knowledge.passes.structural import StructuralValidationPass
 
         graph = KnowledgeGraph().add_entity(
             Entity(name="Py", aliases=["python", "Python"], id="e1")
@@ -604,7 +604,7 @@ class TestStructuralValidationPass:
         assert any("duplicate aliases" in d.message for d in warnings)
 
     def test_circular_dependency(self) -> None:
-        from knowledge.passes.structural_pass import StructuralValidationPass
+        from knowledge.passes.structural import StructuralValidationPass
 
         r1 = Relationship(source_id="a", target_id="b", relationship_type="uses", id="r1")
         r2 = Relationship(source_id="b", target_id="c", relationship_type="uses", id="r2")
@@ -623,7 +623,7 @@ class TestStructuralValidationPass:
         assert any("circular" in d.message.lower() for d in warnings)
 
     def test_clean_graph_passes(self) -> None:
-        from knowledge.passes.structural_pass import StructuralValidationPass
+        from knowledge.passes.structural import StructuralValidationPass
 
         rel = Relationship(source_id="a", target_id="b", relationship_type="uses", id="r1")
         graph = (
@@ -638,7 +638,7 @@ class TestStructuralValidationPass:
 
 class TestConsistencyValidationPass:
     def test_conflicting_entity_descriptions(self) -> None:
-        from knowledge.passes.consistency_pass import ConsistencyValidationPass
+        from knowledge.passes.consistency import ConsistencyValidationPass
 
         graph = (
             KnowledgeGraph()
@@ -650,7 +650,7 @@ class TestConsistencyValidationPass:
         assert any("conflicting descriptions" in d.message.lower() for d in warnings)
 
     def test_contradictory_facts(self) -> None:
-        from knowledge.passes.consistency_pass import ConsistencyValidationPass
+        from knowledge.passes.consistency import ConsistencyValidationPass
 
         graph = (
             KnowledgeGraph()
@@ -662,7 +662,7 @@ class TestConsistencyValidationPass:
         assert any("contradictory" in d.message.lower() for d in warnings)
 
     def test_conflicting_relationship_types(self) -> None:
-        from knowledge.passes.consistency_pass import ConsistencyValidationPass
+        from knowledge.passes.consistency import ConsistencyValidationPass
 
         r1 = Relationship(source_id="a", target_id="b", relationship_type="uses", id="r1")
         r2 = Relationship(source_id="a", target_id="b", relationship_type="depends_on", id="r2")
@@ -678,7 +678,7 @@ class TestConsistencyValidationPass:
         assert any("multiple relationship types" in d.message.lower() for d in suggestions)
 
     def test_consistent_graph_passes(self) -> None:
-        from knowledge.passes.consistency_pass import ConsistencyValidationPass
+        from knowledge.passes.consistency import ConsistencyValidationPass
 
         graph = (
             KnowledgeGraph()
@@ -690,7 +690,7 @@ class TestConsistencyValidationPass:
 
 
 class TestScoringPass:
-    def test_scoring_pass_with_relationships(self) -> None:
+    def test_scoring_with_relationships(self) -> None:
         rel = Relationship(source_id="a", target_id="b", relationship_type="uses", id="r1")
         graph = (
             KnowledgeGraph()
@@ -731,7 +731,7 @@ class TestScoringPass:
 
 class TestNormalizeConfidencePass:
     def test_normalize_pass_with_valid_confidences(self) -> None:
-        from knowledge.passes.repair_passes import NormalizeConfidencePass
+        from knowledge.passes.repair import NormalizeConfidencePass
 
         graph = (
             KnowledgeGraph()
@@ -744,7 +744,7 @@ class TestNormalizeConfidencePass:
         assert "0 elements" in result.diagnostics[0].message
 
     def test_normalize_clamps_out_of_range_confidence(self) -> None:
-        from knowledge.passes.repair_passes import NormalizeConfidencePass
+        from knowledge.passes.repair import NormalizeConfidencePass
 
         entity = Entity.model_construct(id="e1", name="Low", confidence=-0.5)
         concept = Concept.model_construct(id="c1", name="High", confidence=1.5)

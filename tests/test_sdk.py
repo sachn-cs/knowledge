@@ -11,7 +11,7 @@ from knowledge.exceptions import (
     UnsupportedSourceError,
 )
 from knowledge.models import Concept, Entity, Fact, KnowledgeGraph
-from knowledge.passes.scoring_pass import KnowledgeScore
+from knowledge.passes.scoring import KnowledgeScore
 
 
 class TestKnowledge:
