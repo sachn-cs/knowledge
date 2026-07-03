@@ -117,3 +117,7 @@
 - `b9d8a74` (2026-07-03) chore: update CI, README badges, gitignore, and cleanup.sh
 - `1bbd338` (2026-07-03) test: expand test coverage to 98% and remove semi-private naming
 - `a1a0dad` (2026-07-03) docs: add comprehensive docstrings across all modules
+- `61180b1` (2026-07-03) docs: update CHANGELOG with recent commits
+- `32d1d97` (2026-07-03) fix: use StrEnum instead of str+Enum and remove redundant cast
+- `66efd10` (2026-07-03) refactor: drop _pass suffix from pass module filenames
+- `f741e7f` (2026-07-03) refactor: eliminate unnecessary exception handling patterns
