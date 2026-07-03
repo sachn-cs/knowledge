@@ -66,16 +66,67 @@ def make_provenance(source: str, extractor: str) -> Provenance:
 ENTITY_PATTERN = re.compile(r"\b([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)\b")
 
 # Common non-entity words to filter out
-SKIP_WORDS: frozenset[str] = frozenset({
-    "both", "this", "that", "these", "those", "here", "there", "when",
-    "what", "which", "where", "who", "whom", "whose", "why", "how",
-    "also", "very", "just", "then", "than", "some", "each", "every",
-    "many", "much", "more", "most", "few", "less", "such", "only",
-    "while", "after", "before", "during", "through", "between",
-    "among", "above", "below", "under", "over", "into", "onto",
-    "upon", "within", "without", "across", "beyond", "about",
-    "around", "along", "beneath", "beside", "toward", "towards",
-})
+SKIP_WORDS: frozenset[str] = frozenset(
+    {
+        "both",
+        "this",
+        "that",
+        "these",
+        "those",
+        "here",
+        "there",
+        "when",
+        "what",
+        "which",
+        "where",
+        "who",
+        "whom",
+        "whose",
+        "why",
+        "how",
+        "also",
+        "very",
+        "just",
+        "then",
+        "than",
+        "some",
+        "each",
+        "every",
+        "many",
+        "much",
+        "more",
+        "most",
+        "few",
+        "less",
+        "such",
+        "only",
+        "while",
+        "after",
+        "before",
+        "during",
+        "through",
+        "between",
+        "among",
+        "above",
+        "below",
+        "under",
+        "over",
+        "into",
+        "onto",
+        "upon",
+        "within",
+        "without",
+        "across",
+        "beyond",
+        "about",
+        "around",
+        "along",
+        "beneath",
+        "beside",
+        "toward",
+        "towards",
+    }
+)
 # Pattern for sentences (fact candidates)
 SENTENCE_PATTERN = re.compile(r"[A-Z][^.!?]*[.!?]")
 # Pattern for "X is a Y" or "X is Y" constructions
@@ -272,9 +323,7 @@ class RelationshipExtractor:
         for verb, rel_type in self.RELATION_TYPES.items():
             sorted_names = sorted(entity_names, key=len, reverse=True)
             name_pattern = "|".join(re.escape(e) for e in sorted_names)
-            pattern = re.compile(
-                rf"\b({name_pattern})\s+{re.escape(verb)}\s+({name_pattern})"
-            )
+            pattern = re.compile(rf"\b({name_pattern})\s+{re.escape(verb)}\s+({name_pattern})")
             matches = pattern.findall(content)
             for src_name, tgt_name in matches:
                 key = f"{src_name}:{rel_type}:{tgt_name}"
