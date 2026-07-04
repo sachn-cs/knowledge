@@ -6,7 +6,7 @@ Thank you for considering contributing to the `knowledge` SDK.
 
 ```bash
 # Clone the repository
-git clone https://github.com/anomalyco/knowledge.git
+git clone https://github.com/sachn-cs/knowledge.git
 cd knowledge
 
 # Install with dev dependencies

@@ -3,7 +3,7 @@
 ## Reporting a Vulnerability
 
 If you discover a security vulnerability in the `knowledge` SDK,
-please report it by emailing the maintainers at **security@anomalyco.dev**.
+please report it by emailing the maintainers at **sachncs@gmail.com**.
 
 Do **not** open a public GitHub issue for security vulnerabilities.
 

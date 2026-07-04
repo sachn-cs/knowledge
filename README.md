@@ -58,7 +58,7 @@ Traditional document tools are **dumb files** — they store text but understand
 
 ```bash
 # From source (PyPI release coming in v0.1.0)
-pip install git+https://github.com/anomalyco/knowledge.git
+pip install git+https://github.com/sachn-cs/knowledge.git
 ```
 
 ```bash
@@ -238,7 +238,7 @@ pytest benchmarks/ --benchmark-only
 
 Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) to get started.
 
-Report security vulnerabilities to **security@anomalyco.dev** — do not open a public issue.
+Report security vulnerabilities to **sachncs@gmail.com** — do not open a public issue.
 
 ---
 
