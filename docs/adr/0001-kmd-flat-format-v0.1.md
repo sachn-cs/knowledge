@@ -1,6 +1,6 @@
 # ADR-001: Use KMD flat format for v0.1, defer OKF v0.1 bundle to v0.2
 
-**Status:** Accepted
+**Status:** Superseded by ADR-002
 
 **Date:** 2026-07-04
 
