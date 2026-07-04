@@ -3,12 +3,26 @@
 Run with: pytest benchmarks/ --benchmark-only
 """
 
+import importlib.util
+
 import pytest
 
 from knowledge import Knowledge
 from knowledge.engine import VerificationEngine
 from knowledge.models import Concept, Entity, Evidence, Fact, KnowledgeGraph
 from knowledge.kmd import KMDSerializer
+
+_HAS_BENCHMARK = importlib.util.find_spec("pytest_benchmark") is not None
+
+
+if not _HAS_BENCHMARK:
+
+    @pytest.fixture
+    def benchmark():
+        def _benchmark(fn, *args, **kwargs):
+            return fn(*args, **kwargs)
+
+        return _benchmark
 
 
 class TestVerificationBenchmarks:
