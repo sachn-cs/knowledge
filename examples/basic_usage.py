@@ -12,7 +12,6 @@ def main() -> None:
         "Python is a programming language. "
         "It supports asynchronous programming. "
         "JavaScript is used for web development.",
-        verify=False,
     )
 
     print("Created document:")
@@ -34,7 +33,7 @@ def main() -> None:
     print(f"  Completeness: {score.completeness:.1f}%")
     print(f"  Consistency:  {score.consistency:.1f}%")
 
-    # 4. Save to OKF Markdown
+    # 4. Save to KMD
     doc.save("example_output.md")
     print("\nDocument saved to example_output.md")
 

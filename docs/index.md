@@ -58,7 +58,7 @@ okf.save("knowledge.md")
 
 ```bash
 # Create knowledge from text
-knowledge create "Python is a programming language." --no-verify
+knowledge create "Python is a programming language."
 
 # Read and verify an OKF document
 knowledge verify path/to/knowledge.md
