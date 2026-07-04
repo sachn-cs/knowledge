@@ -8,7 +8,7 @@ import pytest
 from knowledge import Knowledge
 from knowledge.engine import VerificationEngine
 from knowledge.models import Entity, Evidence, Fact, KnowledgeGraph
-from knowledge.okf import OKFSerializer
+from knowledge.kmd import KMDSerializer
 
 
 class TestVerificationBenchmarks:
@@ -31,14 +31,14 @@ class TestVerificationBenchmarks:
         assert result.score.overall >= 0
 
     def test_serialize_small_graph(self, benchmark) -> None:
-        serializer = OKFSerializer()
+        serializer = KMDSerializer()
         graph = _make_small_graph()
         result = benchmark(serializer.serialize, graph)
         assert "## Entity:" in result
 
     def test_create_from_text(self, benchmark) -> None:
         knowledge = Knowledge()
-        result = benchmark(knowledge.create, "Python is a programming language.", verify=False)
+        result = benchmark(knowledge.create, "Python is a programming language.")
         assert result is not None
 
 

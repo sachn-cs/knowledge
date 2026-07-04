@@ -1,9 +1,13 @@
-"""OKF persistence layer for the knowledge SDK."""
+"""Knowledge Markdown (KMD) persistence layer.
 
-from knowledge.okf.parser import OKFParser
-from knowledge.okf.serializer import OKFSerializer
+KMD is a flat Markdown format for serializing KnowledgeGraphs.
+It uses ``## Section: id`` headings and ``- **field**: value`` lines.
+"""
+
+from knowledge.kmd.parser import KMDParser
+from knowledge.kmd.serializer import KMDSerializer
 
 __all__ = [
-    "OKFParser",
-    "OKFSerializer",
+    "KMDParser",
+    "KMDSerializer",
 ]

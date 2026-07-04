@@ -1,8 +1,9 @@
-"""Tests for the OKF parser and serializer (round-trip)."""
+"""Tests for the KMD parser and serializer (round-trip)."""
 
 import pytest
 
 from knowledge.exceptions import ParseError
+from knowledge.kmd import KMDParser, KMDSerializer
 from knowledge.models import (
     Concept,
     Entity,
@@ -12,7 +13,6 @@ from knowledge.models import (
     Relationship,
     VerificationState,
 )
-from knowledge.okf import OKFParser, OKFSerializer
 
 
 def make_graph() -> KnowledgeGraph:
@@ -60,9 +60,9 @@ def make_graph() -> KnowledgeGraph:
     )
 
 
-class TestOKFParser:
+class TestKMDParser:
     def test_parse_empty(self) -> None:
-        graph = OKFParser().parse("")
+        graph = KMDParser().parse("")
         assert len(graph.entities) == 0
         assert len(graph.concepts) == 0
         assert len(graph.facts) == 0
@@ -70,7 +70,7 @@ class TestOKFParser:
         assert len(graph.evidence) == 0
 
     def test_parse_header_only(self) -> None:
-        graph = OKFParser().parse("# Open Knowledge Format\n")
+        graph = KMDParser().parse("# Knowledge Markdown\n")
         assert len(graph.entities) == 0
 
     def test_parse_entity(self) -> None:
@@ -82,7 +82,7 @@ class TestOKFParser:
 - **confidence**: 0.95
 - **verification**: verified
 """
-        graph = OKFParser().parse(okf)
+        graph = KMDParser().parse(okf)
         assert "python" in graph.entities
         entity = graph.entities["python"]
         assert entity.name == "Python"
@@ -96,7 +96,7 @@ class TestOKFParser:
 ## Concept: ml
 - **name**: Machine Learning
 """
-        graph = OKFParser().parse(okf)
+        graph = KMDParser().parse(okf)
         assert "ml" in graph.concepts
         assert graph.concepts["ml"].name == "Machine Learning"
 
@@ -106,7 +106,7 @@ class TestOKFParser:
 - **statement**: A statement.
 - **evidence**: ev1, ev2
 """
-        graph = OKFParser().parse(okf)
+        graph = KMDParser().parse(okf)
         assert "f1" in graph.facts
         assert graph.facts["f1"].statement == "A statement."
         assert graph.facts["f1"].evidence_refs == ["ev1", "ev2"]
@@ -119,7 +119,7 @@ class TestOKFParser:
 - **type**: depends_on
 - **evidence**: ev1
 """
-        graph = OKFParser().parse(okf)
+        graph = KMDParser().parse(okf)
         assert "r1" in graph.relationships
         rel = graph.relationships["r1"]
         assert rel.source_id == "ent1"
@@ -133,7 +133,7 @@ class TestOKFParser:
 - **content**: Some content.
 - **source**: https://example.com
 """
-        graph = OKFParser().parse(okf)
+        graph = KMDParser().parse(okf)
         assert "ev1" in graph.evidence
         assert graph.evidence["ev1"].content == "Some content."
         assert graph.evidence["ev1"].source == "https://example.com"
@@ -145,7 +145,7 @@ class TestOKFParser:
   Second line.
   Third line.
 """
-        graph = OKFParser().parse(okf)
+        graph = KMDParser().parse(okf)
         assert graph.entities["python"].description == "First line.\nSecond line.\nThird line."
 
     def test_parse_unknown_section_type(self) -> None:
@@ -154,11 +154,11 @@ class TestOKFParser:
 - **name**: test
 """
         with pytest.raises(ParseError, match="Unknown section type"):
-            OKFParser().parse(okf)
+            KMDParser().parse(okf)
 
     def test_parse_all_types(self) -> None:
         okf = """\
-# Open Knowledge Format
+# Knowledge Markdown
 
 ## Entity: python
 - **name**: Python
@@ -178,7 +178,7 @@ class TestOKFParser:
 - **content**: Content.
 - **source**: src
 """
-        graph = OKFParser().parse(okf)
+        graph = KMDParser().parse(okf)
         assert "python" in graph.entities
         assert "typing" in graph.concepts
         assert "f1" in graph.facts
@@ -190,26 +190,26 @@ class TestOKFParser:
 ## Entity: e1
 - **name**: Test
 """
-        graph = OKFParser().parse(okf)
+        graph = KMDParser().parse(okf)
         assert graph.entities["e1"].confidence == 0.0
         assert graph.entities["e1"].verification_state == VerificationState.PENDING
 
 
-class TestOKFSerializer:
+class TestKMDSerializer:
     def test_serialize_empty(self) -> None:
-        result = OKFSerializer().serialize(KnowledgeGraph())
-        assert result == "# Open Knowledge Format\n"
+        result = KMDSerializer().serialize(KnowledgeGraph())
+        assert result == "# Knowledge Markdown\n"
 
     def test_serialize_entity(self) -> None:
         graph = KnowledgeGraph().add_entity(Entity(id="python", name="Python", aliases=["Py"]))
-        result = OKFSerializer().serialize(graph)
+        result = KMDSerializer().serialize(graph)
         assert "## Entity: python" in result
         assert "- **name**: Python" in result
         assert "- **aliases**: Py" in result
 
     def test_serialize_omits_defaults(self) -> None:
         graph = KnowledgeGraph().add_entity(Entity(id="e1", name="Test"))
-        result = OKFSerializer().serialize(graph)
+        result = KMDSerializer().serialize(graph)
         assert "- **confidence**:" not in result
         assert "- **verification**:" not in result
         assert "- **aliases**:" not in result
@@ -224,7 +224,7 @@ class TestOKFSerializer:
                 aliases=["A", "B"],
             )
         )
-        result = OKFSerializer().serialize(graph)
+        result = KMDSerializer().serialize(graph)
         assert "- **confidence**: 0.80" in result
         assert "- **verification**: verified" in result
         assert "- **aliases**: A, B" in result
@@ -234,7 +234,7 @@ class TestOKFSerializer:
         graph = graph.add_entity(Entity(id="z", name="Z"))
         graph = graph.add_entity(Entity(id="a", name="A"))
         graph = graph.add_entity(Entity(id="m", name="M"))
-        result = OKFSerializer().serialize(graph)
+        result = KMDSerializer().serialize(graph)
         # Entities should appear in ID order: a, m, z
         a_pos = result.index("## Entity: a")
         m_pos = result.index("## Entity: m")
@@ -245,7 +245,7 @@ class TestOKFSerializer:
         graph = KnowledgeGraph()
         graph = graph.add_fact(Fact(id="f1", statement="A fact"))
         graph = graph.add_entity(Entity(id="e1", name="Entity"))
-        result = OKFSerializer().serialize(graph)
+        result = KMDSerializer().serialize(graph)
         # Entities before facts
         e_pos = result.index("## Entity: e1")
         f_pos = result.index("## Fact: f1")
@@ -259,17 +259,17 @@ class TestOKFSerializer:
                 description="Line one.\nLine two.\nLine three.",
             )
         )
-        result = OKFSerializer().serialize(graph)
+        result = KMDSerializer().serialize(graph)
         assert "- **description**: Line one." in result
         assert "  Line two." in result
         assert "  Line three." in result
 
 
-class TestOKFRoundTrip:
+class TestKMDRoundTrip:
     def test_round_trip_empty(self) -> None:
         original = KnowledgeGraph()
-        serializer = OKFSerializer()
-        parser = OKFParser()
+        serializer = KMDSerializer()
+        parser = KMDParser()
         okf = serializer.serialize(original)
         restored = parser.parse(okf)
         assert len(restored.entities) == 0
@@ -280,8 +280,8 @@ class TestOKFRoundTrip:
 
     def test_round_trip_full(self) -> None:
         original = make_graph()
-        serializer = OKFSerializer()
-        parser = OKFParser()
+        serializer = KMDSerializer()
+        parser = KMDParser()
         okf = serializer.serialize(original)
         restored = parser.parse(okf)
 
@@ -324,8 +324,8 @@ class TestOKFRoundTrip:
         original = KnowledgeGraph().add_entity(
             Entity(id="e1", name="Test", description="Desc.", confidence=0.5)
         )
-        okf = OKFSerializer().serialize(original)
-        restored = OKFParser().parse(okf)
+        okf = KMDSerializer().serialize(original)
+        restored = KMDParser().parse(okf)
         assert restored.entities["e1"].name == "Test"
         assert restored.entities["e1"].description == "Desc."
         assert restored.entities["e1"].confidence == 0.5
@@ -338,8 +338,8 @@ class TestOKFRoundTrip:
                 description="Line 1\nLine 2\nLine 3",
             )
         )
-        okf = OKFSerializer().serialize(original)
-        restored = OKFParser().parse(okf)
+        okf = KMDSerializer().serialize(original)
+        restored = KMDParser().parse(okf)
         assert restored.entities["e1"].description == "Line 1\nLine 2\nLine 3"
 
     def test_round_trip_fact_with_multiple_evidence(self) -> None:
@@ -350,8 +350,8 @@ class TestOKFRoundTrip:
                 evidence_refs=["ev1", "ev2", "ev3"],
             )
         )
-        okf = OKFSerializer().serialize(original)
-        restored = OKFParser().parse(okf)
+        okf = KMDSerializer().serialize(original)
+        restored = KMDParser().parse(okf)
         assert restored.facts["f1"].evidence_refs == ["ev1", "ev2", "ev3"]
 
     def test_round_trip_preserves_verification_state(self) -> None:
@@ -359,30 +359,30 @@ class TestOKFRoundTrip:
             original = KnowledgeGraph().add_entity(
                 Entity(id="e1", name="Test", verification_state=state)
             )
-            okf = OKFSerializer().serialize(original)
-            restored = OKFParser().parse(okf)
+            okf = KMDSerializer().serialize(original)
+            restored = KMDParser().parse(okf)
             assert restored.entities["e1"].verification_state == state
 
     def test_round_trip_preserves_confidence(self) -> None:
         for conf in [0.0, 0.25, 0.5, 0.75, 1.0]:
             original = KnowledgeGraph().add_entity(Entity(id="e1", name="Test", confidence=conf))
-            okf = OKFSerializer().serialize(original)
-            restored = OKFParser().parse(okf)
+            okf = KMDSerializer().serialize(original)
+            restored = KMDParser().parse(okf)
             assert restored.entities["e1"].confidence == conf
 
     def test_serialize_is_idempotent(self) -> None:
         """Serializing the same graph twice produces identical output."""
         graph = make_graph()
-        serializer = OKFSerializer()
+        serializer = KMDSerializer()
         first = serializer.serialize(graph)
         second = serializer.serialize(graph)
         assert first == second
 
     def test_parse_is_deterministic(self) -> None:
-        """Parsing the same OKF twice produces semantically equivalent graphs."""
+        """Parsing the same KMD twice produces semantically equivalent graphs."""
         graph = make_graph()
-        okf = OKFSerializer().serialize(graph)
-        parser = OKFParser()
+        okf = KMDSerializer().serialize(graph)
+        parser = KMDParser()
         first = parser.parse(okf)
         second = parser.parse(okf)
         assert semantic_eq(first, second)
@@ -390,7 +390,7 @@ class TestOKFRoundTrip:
     def test_cycle_detection_invalid_type(self) -> None:
         """Parser raises ParseError for invalid section types."""
         with pytest.raises(ParseError):
-            OKFParser().parse("## Widget: w1\n- **name**: test\n")
+            KMDParser().parse("## Widget: w1\n- **name**: test\n")
 
 
 class TestProvenanceMetadataRoundTrip:
@@ -402,8 +402,8 @@ class TestProvenanceMetadataRoundTrip:
         )
         entity = Entity(id="e1", name="Test", provenance=prov)
         graph = KnowledgeGraph().add_entity(entity)
-        okf = OKFSerializer().serialize(graph)
-        restored = OKFParser().parse(okf)
+        okf = KMDSerializer().serialize(graph)
+        restored = KMDParser().parse(okf)
         rp = restored.entities["e1"].provenance
         assert rp is not None
         assert rp.source_id == "src_001"
@@ -416,8 +416,8 @@ class TestProvenanceMetadataRoundTrip:
         meta = Metadata(tags=["ai", "knowledge"], version=2)
         entity = Entity(id="e1", name="Test", metadata=meta)
         graph = KnowledgeGraph().add_entity(entity)
-        okf = OKFSerializer().serialize(graph)
-        restored = OKFParser().parse(okf)
+        okf = KMDSerializer().serialize(graph)
+        restored = KMDParser().parse(okf)
         rm = restored.entities["e1"].metadata
         assert rm.tags == ["ai", "knowledge"]
         assert rm.version == 2
@@ -429,8 +429,8 @@ class TestProvenanceMetadataRoundTrip:
         meta = Metadata(tags=["test"])
         entity = Entity(id="e1", name="Test", provenance=prov, metadata=meta)
         graph = KnowledgeGraph().add_entity(entity)
-        okf = OKFSerializer().serialize(graph)
-        restored = OKFParser().parse(okf)
+        okf = KMDSerializer().serialize(graph)
+        restored = KMDParser().parse(okf)
         assert restored.entities["e1"].provenance is not None
         assert restored.entities["e1"].provenance.source_id == "src_001"
         assert restored.entities["e1"].metadata.tags == ["test"]
@@ -438,9 +438,9 @@ class TestProvenanceMetadataRoundTrip:
     def test_omits_provenance_when_missing(self) -> None:
         entity = Entity(id="e1", name="Test")
         graph = KnowledgeGraph().add_entity(entity)
-        okf = OKFSerializer().serialize(graph)
+        okf = KMDSerializer().serialize(graph)
         assert "provenance_source" not in okf
-        restored = OKFParser().parse(okf)
+        restored = KMDParser().parse(okf)
         assert restored.entities["e1"].provenance is None
 
 
@@ -464,7 +464,7 @@ def semantic_eq(a: KnowledgeGraph, b: KnowledgeGraph) -> bool:
 @pytest.fixture
 def complex_okf() -> str:
     return """\
-# Open Knowledge Format
+# Knowledge Markdown
 
 ## Entity: python
 - **name**: Python
@@ -495,9 +495,9 @@ def complex_okf() -> str:
 """
 
 
-class TestComplexOKF:
+class TestComplexKMD:
     def test_parse_complex(self, complex_okf: str) -> None:
-        graph = OKFParser().parse(complex_okf)
+        graph = KMDParser().parse(complex_okf)
         assert len(graph.entities) == 1
         assert len(graph.concepts) == 1
         assert len(graph.facts) == 1
@@ -511,7 +511,7 @@ class TestComplexOKF:
         assert entity.verification_state == VerificationState.VERIFIED
 
     def test_round_trip_complex(self, complex_okf: str) -> None:
-        original = OKFParser().parse(complex_okf)
-        okf = OKFSerializer().serialize(original)
-        restored = OKFParser().parse(okf)
+        original = KMDParser().parse(complex_okf)
+        okf = KMDSerializer().serialize(original)
+        restored = KMDParser().parse(okf)
         assert semantic_eq(original, restored)

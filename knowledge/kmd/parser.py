@@ -1,6 +1,6 @@
-"""Deterministic OKF Markdown parser.
+"""Deterministic KMD (Knowledge Markdown) parser.
 
-Converts OKF Markdown documents into the canonical KnowledgeGraph
+Converts KMD documents into the canonical KnowledgeGraph
 representation. Every element type (Entity, Concept, Fact, Relationship,
 Evidence) is identified by its section heading and parsed into the
 corresponding model.
@@ -28,8 +28,8 @@ SECTION_PATTERN = re.compile(r"^## (\w+):\s*(.*)")
 FIELD_LINE_PATTERN = re.compile(r"^- \*\*([^*]+)\*\*:\s*(.*)")
 
 
-class OKFParser:
-    """Parses OKF Markdown content into a KnowledgeGraph.
+class KMDParser:
+    """Parses KMD content into a KnowledgeGraph.
 
     The parser is fully deterministic. Given the same input, it always
     produces the same output. No semantic reasoning is performed during
@@ -37,10 +37,10 @@ class OKFParser:
     """
 
     def parse(self, content: str) -> KnowledgeGraph:
-        """Parse OKF Markdown content into a KnowledgeGraph.
+        """Parse KMD content into a KnowledgeGraph.
 
         Args:
-            content: The OKF Markdown string to parse.
+            content: The KMD string to parse.
 
         Returns:
             A fully populated KnowledgeGraph.
@@ -251,7 +251,7 @@ def parse_metadata(fields: dict[str, str]) -> Metadata:
         A ``Metadata`` instance with tags and version populated.
     """
     return Metadata(
-        tags=OKFParser.parse_list(fields.get("tags")),
+        tags=KMDParser.parse_list(fields.get("tags")),
         version=int(fields["version"]) if "version" in fields and fields["version"].strip() else 1,
     )
 
@@ -269,10 +269,10 @@ def build_entity(element_id: str, fields: dict[str, str]) -> Entity:
     return Entity(
         id=element_id,
         name=fields.get("name", ""),
-        aliases=OKFParser.parse_list(fields.get("aliases")),
+        aliases=KMDParser.parse_list(fields.get("aliases")),
         description=fields.get("description"),
-        confidence=OKFParser.parse_confidence(fields.get("confidence")),
-        verification_state=OKFParser.parse_verification(fields.get("verification")),
+        confidence=KMDParser.parse_confidence(fields.get("confidence")),
+        verification_state=KMDParser.parse_verification(fields.get("verification")),
         provenance=parse_provenance(fields),
         metadata=parse_metadata(fields),
     )
@@ -292,8 +292,8 @@ def build_concept(element_id: str, fields: dict[str, str]) -> Concept:
         id=element_id,
         name=fields.get("name", ""),
         description=fields.get("description"),
-        confidence=OKFParser.parse_confidence(fields.get("confidence")),
-        verification_state=OKFParser.parse_verification(fields.get("verification")),
+        confidence=KMDParser.parse_confidence(fields.get("confidence")),
+        verification_state=KMDParser.parse_verification(fields.get("verification")),
         provenance=parse_provenance(fields),
         metadata=parse_metadata(fields),
     )
@@ -312,9 +312,9 @@ def build_fact(element_id: str, fields: dict[str, str]) -> Fact:
     return Fact(
         id=element_id,
         statement=fields.get("statement", ""),
-        evidence_refs=OKFParser.parse_list(fields.get("evidence")),
-        confidence=OKFParser.parse_confidence(fields.get("confidence")),
-        verification_state=OKFParser.parse_verification(fields.get("verification")),
+        evidence_refs=KMDParser.parse_list(fields.get("evidence")),
+        confidence=KMDParser.parse_confidence(fields.get("confidence")),
+        verification_state=KMDParser.parse_verification(fields.get("verification")),
         provenance=parse_provenance(fields),
         metadata=parse_metadata(fields),
     )
@@ -335,9 +335,9 @@ def build_relationship(element_id: str, fields: dict[str, str]) -> Relationship:
         source_id=fields.get("source", ""),
         target_id=fields.get("target", ""),
         relationship_type=fields.get("type", ""),
-        evidence_refs=OKFParser.parse_list(fields.get("evidence")),
-        confidence=OKFParser.parse_confidence(fields.get("confidence")),
-        verification_state=OKFParser.parse_verification(fields.get("verification")),
+        evidence_refs=KMDParser.parse_list(fields.get("evidence")),
+        confidence=KMDParser.parse_confidence(fields.get("confidence")),
+        verification_state=KMDParser.parse_verification(fields.get("verification")),
         provenance=parse_provenance(fields),
         metadata=parse_metadata(fields),
     )
@@ -357,8 +357,8 @@ def build_evidence(element_id: str, fields: dict[str, str]) -> Evidence:
         id=element_id,
         content=fields.get("content", ""),
         source=fields.get("source", ""),
-        confidence=OKFParser.parse_confidence(fields.get("confidence")),
-        verification_state=OKFParser.parse_verification(fields.get("verification")),
+        confidence=KMDParser.parse_confidence(fields.get("confidence")),
+        verification_state=KMDParser.parse_verification(fields.get("verification")),
         provenance=parse_provenance(fields),
         metadata=parse_metadata(fields),
     )

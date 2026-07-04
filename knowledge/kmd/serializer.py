@@ -1,6 +1,6 @@
-"""Deterministic OKF Markdown serializer.
+"""Deterministic KMD (Knowledge Markdown) serializer.
 
-Converts a canonical KnowledgeGraph into an OKF Markdown document.
+Converts a canonical KnowledgeGraph into KMD format.
 The serializer produces deterministic output — the same KnowledgeGraph
 always produces the same Markdown.
 
@@ -19,11 +19,11 @@ from knowledge.models import (
     VerificationState,
 )
 
-OKF_HEADER = "# Open Knowledge Format"
+KMD_HEADER = "# Knowledge Markdown"
 
 
-class OKFSerializer:
-    """Serializes a KnowledgeGraph into OKF Markdown.
+class KMDSerializer:
+    """Serializes a KnowledgeGraph into KMD (Knowledge Markdown).
 
     Elements are written in a fixed order: entities, concepts, facts,
     relationships, evidence. Within each group, elements are ordered by
@@ -31,15 +31,15 @@ class OKFSerializer:
     """
 
     def serialize(self, graph: KnowledgeGraph) -> str:
-        """Serialize a ``KnowledgeGraph`` into OKF Markdown.
+        """Serialize a ``KnowledgeGraph`` into KMD format.
 
         Args:
             graph: The knowledge graph to serialize.
 
         Returns:
-            A deterministic OKF Markdown string.
+            A deterministic KMD string.
         """
-        parts: list[str] = [OKF_HEADER, ""]
+        parts: list[str] = [KMD_HEADER, ""]
 
         for entity in sorted(graph.entities.values(), key=lambda e: e.id):
             parts.extend(self.serialize_entity(entity))
@@ -138,11 +138,11 @@ class OKFSerializer:
         """
         lines: list[str] = []
         if entity.provenance:
-            lines.extend(OKFSerializer.field("provenance_source", entity.provenance.source_id))
-            lines.extend(OKFSerializer.field("provenance_extractor", entity.provenance.extractor))
+            lines.extend(KMDSerializer.field("provenance_source", entity.provenance.source_id))
+            lines.extend(KMDSerializer.field("provenance_extractor", entity.provenance.extractor))
             if entity.provenance.verification_cycle:
                 lines.extend(
-                    OKFSerializer.field("provenance_cycle", entity.provenance.verification_cycle)
+                    KMDSerializer.field("provenance_cycle", entity.provenance.verification_cycle)
                 )
         return [line for line in lines if line]
 
@@ -162,10 +162,10 @@ class OKFSerializer:
         if entity.metadata:
             if entity.metadata.tags:
                 lines.extend(
-                    OKFSerializer.field("tags", OKFSerializer.list_string(entity.metadata.tags))
+                    KMDSerializer.field("tags", KMDSerializer.list_string(entity.metadata.tags))
                 )
             if entity.metadata.version != 1:
-                lines.extend(OKFSerializer.field("version", str(entity.metadata.version)))
+                lines.extend(KMDSerializer.field("version", str(entity.metadata.version)))
         return [line for line in lines if line]
 
     def serialize_entity(self, entity: Entity) -> list[str]:
