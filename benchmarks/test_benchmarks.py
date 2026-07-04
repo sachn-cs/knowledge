@@ -7,7 +7,7 @@ import pytest
 
 from knowledge import Knowledge
 from knowledge.engine import VerificationEngine
-from knowledge.models import Entity, Evidence, Fact, KnowledgeGraph
+from knowledge.models import Concept, Entity, Evidence, Fact, KnowledgeGraph
 from knowledge.kmd import KMDSerializer
 
 
@@ -41,6 +41,18 @@ class TestVerificationBenchmarks:
         result = benchmark(knowledge.create, "Python is a programming language.")
         assert result is not None
 
+    def test_verify_large_graph(self, benchmark) -> None:
+        engine = VerificationEngine()
+        graph = _make_large_graph()
+        result = benchmark(engine.verify, graph)
+        assert result.score.overall >= 0
+
+    def test_serialize_large_graph(self, benchmark) -> None:
+        serializer = KMDSerializer()
+        graph = _make_large_graph()
+        result = benchmark(serializer.serialize, graph)
+        assert "## Entity:" in result
+
 
 def _make_small_graph() -> KnowledgeGraph:
     graph = KnowledgeGraph()
@@ -60,5 +72,20 @@ def _make_medium_graph() -> KnowledgeGraph:
     for i in range(15):
         graph = graph.add_evidence(
             Evidence(content=f"Evidence {i}", source="doc.md", id=f"ev_{i:03d}")
+        )
+    return graph
+
+
+def _make_large_graph() -> KnowledgeGraph:
+    graph = KnowledgeGraph()
+    for i in range(1000):
+        graph = graph.add_entity(Entity(name=f"Entity_{i}", id=f"ent_{i:04d}"))
+    for i in range(2000):
+        graph = graph.add_fact(Fact(statement=f"Fact {i} about the knowledge graph.", id=f"f_{i:04d}"))
+    for i in range(500):
+        graph = graph.add_concept(Concept(name=f"Concept_{i}", id=f"c_{i:04d}"))
+    for i in range(1500):
+        graph = graph.add_evidence(
+            Evidence(content=f"Evidence block {i} from source.", source="large_doc.md", id=f"ev_{i:04d}")
         )
     return graph
