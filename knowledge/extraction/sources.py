@@ -1,80 +1,113 @@
-"""Source readers for knowledge extraction.
-
-Source readers acquire raw content from various input formats.
-They never perform semantic analysis — only format-specific parsing
-to produce a canonical SourceDocument.
-"""
+"""HTML section parser — splits HTML by heading tags."""
 
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from html.parser import HTMLParser
 
 
 @dataclass(frozen=True)
-class SourceDocument:
-    """Canonical representation of a source document.
+class SourceSection:
+    """A single section extracted from an HTML document.
 
-    Contains the raw text content along with metadata about its origin.
+    Attributes:
+        heading: The section heading text (HTML stripped).
+        content: Plain text content of the section.
+        level: The heading level (2 for <h2>, 3 for <h3>, etc.).
     """
 
+    heading: str
     content: str
-    source: str
-    metadata: dict[str, str] = field(default_factory=dict)
+    level: int
 
 
-class TextSourceReader:
-    """Reads plain text content into a SourceDocument."""
+class HTMLSourceReader:
+    """Reads HTML content, extracting sections by headings.
 
-    def read(self, content: str, source: str = "text") -> SourceDocument:
-        """Read plain text content into a SourceDocument.
-
-        Args:
-            content: The raw text content.
-            source: Identifier for the source document.
-
-        Returns:
-            A SourceDocument with format metadata set to "text".
-        """
-        return SourceDocument(content=content, source=source, metadata={"format": "text"})
-
-
-class MarkdownSourceReader:
-    """Reads Markdown content, stripping formatting to produce plain text.
-
-    Preserves structural information (headings) as metadata while
-    removing Markdown syntax for downstream extraction.
+    Parses HTML into structured sections based on <h2>, <h3>, <h4>
+    heading tags. Each section contains the plain text between
+    headings.
     """
 
-    # Regex to remove inline formatting
-    LINK_PATTERN = re.compile(r"\[([^\]]+)\]\([^)]+\)")
-    BOLD_PATTERN = re.compile(r"\*\*([^*]+)\*\*")
-    ITALIC_PATTERN = re.compile(r"(?<!\*)\*([^*]+)\*(?!\*)")
-    CODE_PATTERN = re.compile(r"`([^`]+)`")
-    HEADING_PATTERN = re.compile(r"^#{1,6}\s+(.*)", re.MULTILINE)
+    HEADING_TAGS = frozenset({"h2", "h3", "h4"})
 
-    def read(self, content: str, source: str = "markdown") -> SourceDocument:
-        """Read Markdown content, stripping formatting to produce plain text.
+    def read_sections(self, content: str) -> list[SourceSection]:
+        """Parse HTML into structured sections by heading tags.
 
         Args:
-            content: The raw Markdown content.
-            source: Identifier for the source document.
+            content: The raw HTML content.
+            source: Identifier for the source document (unused).
 
         Returns:
-            A SourceDocument with plain text content and heading metadata.
+            A list of SourceSection tuples (heading, plain_text, level).
         """
-        text = content
-        text = self.LINK_PATTERN.sub(r"\1", text)
-        text = self.BOLD_PATTERN.sub(r"\1", text)
-        text = self.ITALIC_PATTERN.sub(r"\1", text)
-        text = self.CODE_PATTERN.sub(r"\1", text)
-        headings = self.HEADING_PATTERN.findall(content)
+        parser = _HTMLSectionParser()
+        parser.feed(content)
+        parser.close()
+        sections: list[SourceSection] = []
+        for heading, body, level in parser.sections:
+            plain = re.sub(r"<[^>]+>", " ", body)
+            plain = re.sub(r" {2,}", " ", plain).strip()
+            h_text = re.sub(r"<[^>]+>", " ", heading)
+            h_text = re.sub(r" {2,}", " ", h_text).strip()
+            sections.append(SourceSection(heading=h_text, content=plain, level=level))
+        return sections
 
-        return SourceDocument(
-            content=text,
-            source=source,
-            metadata={
-                "format": "markdown",
-                "headings": ", ".join(h.strip() for h in headings),
-            },
+
+class _HTMLSectionParser(HTMLParser):
+    """Internal HTML parser that extracts sections by heading tags."""
+
+    def __init__(self, *, convert_charrefs: bool = True) -> None:
+        super().__init__(convert_charrefs=convert_charrefs)
+        self.sections: list[tuple[str, str, int]] = []
+        self._current_heading: str = ""
+        self._current_body: list[str] = []
+        self._current_level: int = 0
+        self._in_heading: bool = False
+        self._skip_tags: frozenset[str] = frozenset(
+            {"script", "style", "nav", "footer", "header"}
         )
+        self._skip_depth: int = 0
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        tag_lower = tag.lower()
+        if tag_lower in self._skip_tags:
+            self._skip_depth += 1
+            return
+        if self._skip_depth > 0:
+            return
+        if tag_lower in HTMLSourceReader.HEADING_TAGS:
+            self._finalize_current_section()
+            self._in_heading = True
+            self._current_heading = ""
+            self._current_level = int(tag_lower[1])
+
+    def handle_endtag(self, tag: str) -> None:
+        tag_lower = tag.lower()
+        if tag_lower in self._skip_tags:
+            self._skip_depth -= 1
+            return
+        if self._skip_depth > 0:
+            return
+        if tag_lower in HTMLSourceReader.HEADING_TAGS:
+            self._in_heading = False
+
+    def handle_data(self, data: str) -> None:
+        if self._skip_depth > 0:
+            return
+        if self._in_heading:
+            self._current_heading += data
+        else:
+            self._current_body.append(data)
+
+    def _finalize_current_section(self) -> None:
+        if self._current_heading.strip():
+            body = "".join(self._current_body).strip()
+            if body:
+                self.sections.append(
+                    (self._current_heading.strip(), body, self._current_level)
+                )
+        self._current_heading = ""
+        self._current_body = []
+        self._current_level = 0
