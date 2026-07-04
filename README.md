@@ -2,7 +2,7 @@
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%20%7C%203.13-blue)]()
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)]()
-[![CI](https://github.com/anomalyco/knowledge/actions/workflows/ci.yml/badge.svg)](https://github.com/anomalyco/knowledge/actions/workflows/ci.yml)
+[![CI](https://github.com/sachn-cs/knowledge/actions/workflows/ci.yml/badge.svg)](https://github.com/anomalyco/knowledge/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-98%25-brightgreen)]()
 [![Status](https://img.shields.io/badge/status-pre--release-orange)]()
 
@@ -173,27 +173,27 @@ Knowledge Sources (text, markdown, files)
 
 Every mutation passes through verification. The engine runs a DAG of compiler passes, each with a specific responsibility:
 
-| Phase | Passes |
-|-------|--------|
-| Schema | Type checks, required fields, structural integrity |
-| Analysis | Alias resolution, duplicate detection |
-| Consistency | Semantic consistency, relation target validity |
-| Scoring | Completeness, consistency, evidence, ontology, metadata |
-| Repair | Confidence normalization, provenance attachment, entity merging |
+| Phase       | Passes                                                          |
+| ----------- | --------------------------------------------------------------- |
+| Schema      | Type checks, required fields, structural integrity              |
+| Analysis    | Alias resolution, duplicate detection                           |
+| Consistency | Semantic consistency, relation target validity                  |
+| Scoring     | Completeness, consistency, evidence, ontology, metadata         |
+| Repair      | Confidence normalization, provenance attachment, entity merging |
 
 ---
 
 ## Documentation
 
-| Resource | Description |
-|----------|-------------|
-| [User Guide](docs/user_guide.md) | Step-by-step walkthrough |
-| [API Reference](docs/api.md) | Full public API documentation |
-| [Architecture](docs/architecture.md) | System design and layer descriptions |
+| Resource                             | Description                           |
+| ------------------------------------ | ------------------------------------- |
+| [User Guide](docs/user_guide.md)     | Step-by-step walkthrough              |
+| [API Reference](docs/api.md)         | Full public API documentation         |
+| [Architecture](docs/architecture.md) | System design and layer descriptions  |
 | [Plugin Guide](docs/plugin_guide.md) | Writing and registering custom passes |
-| [ADR Log](docs/adr/) | Architecture decision records |
-| [SPEC.md](SPEC.md) | Complete specification |
-| [ROADMAP.md](ROADMAP.md) | Version roadmap and planned features |
+| [ADR Log](docs/adr/)                 | Architecture decision records         |
+| [SPEC.md](SPEC.md)                   | Complete specification                |
+| [ROADMAP.md](ROADMAP.md)             | Version roadmap and planned features  |
 
 ---
 
@@ -201,20 +201,20 @@ Every mutation passes through verification. The engine runs a DAG of compiler pa
 
 **v0.1.0 (pre-release)** — Core functionality complete. Not yet on PyPI.
 
-| Milestone | Status |
-|-----------|--------|
-| Core Domain Model | ✅ |
-| KMD Persistence | ✅ |
-| Compiler Framework | ✅ |
-| Extraction (text + markdown) | ✅ |
-| Verification Engine | ✅ |
-| Repair Engine | ✅ |
-| CLI | ✅ |
-| Plugin System | ✅ |
-| Documentation | ✅ |
-| Large-Graph Benchmarks | ✅ |
-| OKF v0.1 Bundle Support | 🔜 v0.2.0 |
-| PyPI Release | 🔜 v0.1.0 |
+| Milestone                    | Status    |
+| ---------------------------- | --------- |
+| Core Domain Model            | ✅        |
+| KMD Persistence              | ✅        |
+| Compiler Framework           | ✅        |
+| Extraction (text + markdown) | ✅        |
+| Verification Engine          | ✅        |
+| Repair Engine                | ✅        |
+| CLI                          | ✅        |
+| Plugin System                | ✅        |
+| Documentation                | ✅        |
+| Large-Graph Benchmarks       | ✅        |
+| OKF v0.1 Bundle Support      | 🔜 v0.2.0 |
+| PyPI Release                 | 🔜 v0.1.0 |
 
 ---
 
@@ -248,4 +248,4 @@ MIT
 
 ---
 
-*Built with [Pydantic](https://docs.pydantic.dev/), [Typer](https://typer.tiangolo.com/) (CLI), and a lot of compiler-pass inspiration.*
+_Built with [Pydantic](https://docs.pydantic.dev/), [Typer](https://typer.tiangolo.com/) (CLI), and a lot of compiler-pass inspiration._
