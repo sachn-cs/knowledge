@@ -5,23 +5,33 @@ build-backend = "hatchling.build"
 [project]
 name = "knowledge"
 version = "0.1.0"
-description = "Open-source Python SDK for creating Open Knowledge Format (OKF) bundles from HTML sources"
+description = "LLM-powered OKF bundle creation from documentation sources"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { file = "LICENSE" }
-keywords = ["knowledge", "okf", "knowledge-graph", "knowledge-engineering"]
+keywords = [
+    "knowledge",
+    "okf",
+    "knowledge-graph",
+    "knowledge-engineering",
+    "llm",
+    "litellm",
+    "documentation",
+    "extraction",
+]
 authors = [
     { name = "knowledge contributors" },
 ]
 
 classifiers = [
-    "Development Status :: 1 - Planning",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Markup :: Markdown",
 ]
 
 dependencies = [
@@ -33,10 +43,10 @@ dependencies = [
 knowledge = "knowledge.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/anomalyco/knowledge"
-Documentation = "https://knowledge-sdk.dev"
-Source = "https://github.com/anomalyco/knowledge"
-Issues = "https://github.com/anomalyco/knowledge/issues"
+Homepage = "https://github.com/sachn-cs/knowledge"
+Documentation = "https://sachn-cs.github.io/knowledge"
+Source = "https://github.com/sachn-cs/knowledge"
+Issues = "https://github.com/sachn-cs/knowledge/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -44,6 +54,8 @@ dev = [
     "pytest-cov>=5.0",
     "ruff>=0.6.0",
     "mypy>=1.11.0",
+    "black>=24.0",
+    "vulture>=2.7",
 ]
 bench = [
     "pytest-benchmark>=4.0.0",
