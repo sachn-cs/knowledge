@@ -50,9 +50,7 @@ class TestCLI:
 
     def test_parser_create_validate_flag(self) -> None:
         parser = build_parser()
-        args = parser.parse_args(
-            ["create", "--validate", "http://example.com", "/tmp/out"]
-        )
+        args = parser.parse_args(["create", "--validate", "http://example.com", "/tmp/out"])
         assert args.validate is True
 
     def test_parser_create_no_validate(self) -> None:

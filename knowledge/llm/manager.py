@@ -244,11 +244,7 @@ def parse_concept_file(filepath: str) -> Concept | None:
             value = yaml_unescape(value)
             if key == "tags":
                 raw = value.strip("[]").strip()
-                value = (
-                    [yaml_unescape(t.strip().strip('"')) for t in raw.split(",")]
-                    if raw
-                    else []
-                )
+                value = [yaml_unescape(t.strip().strip('"')) for t in raw.split(",")] if raw else []
             metadata[key] = value
 
     cid = metadata.get("id")

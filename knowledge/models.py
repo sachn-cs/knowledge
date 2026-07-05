@@ -64,15 +64,11 @@ class Concept(BaseModel):
     description: str | None = Field(
         default=None, description="Section plain-text content in Markdown"
     )
-    tags: list[str] = Field(
-        default_factory=list, description="Category tags for grouping"
-    )
+    tags: list[str] = Field(default_factory=list, description="Category tags for grouping")
 
     @field_validator("id")
     @classmethod
-    def validate_id_is_slug(
-        cls, v: str
-    ) -> str:  # noqa: N804 — Pydantic invokes via metaclass
+    def validate_id_is_slug(cls, v: str) -> str:  # noqa: N804 — Pydantic invokes via metaclass
         """Validate that ``id`` is a safe, kebab-case slug.
 
         The allowed character set ``[a-z0-9-]`` prevents path-traversal
@@ -140,9 +136,7 @@ class KnowledgeGraph(BaseModel, frozen=True):
             A new ``KnowledgeGraph`` containing all existing concepts plus
             *concept*.
         """
-        return self.model_copy(
-            update={"concepts": {**self.concepts, concept.id: concept}}
-        )
+        return self.model_copy(update={"concepts": {**self.concepts, concept.id: concept}})
 
     def remove_concept(self, concept_id: str) -> KnowledgeGraph:
         """Return a new graph with the concept identified by *concept_id* removed.
@@ -157,7 +151,5 @@ class KnowledgeGraph(BaseModel, frozen=True):
             A new ``KnowledgeGraph`` without the specified concept.
         """
         return self.model_copy(
-            update={
-                "concepts": {k: v for k, v in self.concepts.items() if k != concept_id}
-            }
+            update={"concepts": {k: v for k, v in self.concepts.items() if k != concept_id}}
         )

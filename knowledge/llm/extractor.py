@@ -228,9 +228,7 @@ Return exactly this JSON shape:
             A :class:`~knowledge.models.Concept` instance, or ``None``
             if the LLM call fails or returns unparseable output.
         """
-        prompt = self.EXTRACTION_PROMPT.format(
-            heading=heading, content=content, level=level
-        )
+        prompt = self.EXTRACTION_PROMPT.format(heading=heading, content=content, level=level)
         try:
             response = litellm.completion(
                 model=self.model,
