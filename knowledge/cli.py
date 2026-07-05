@@ -1,4 +1,36 @@
-"""CLI — create, update, and remove commands with progress feedback."""
+"""Command-line interface for creating, updating, and removing OKF bundles.
+
+Usage
+-----
+::
+
+    # Create a bundle from a URL
+    knowledge create https://example.com/docs.html ./my-bundle
+
+    # Create with a different model
+    knowledge create --model claude-3-opus-20240229 docs.html ./my-bundle
+
+    # Create and validate
+    knowledge create --validate docs.html ./my-bundle
+
+    # Update an existing bundle
+    knowledge update docs.html ./my-bundle
+
+    # Remove specific concepts
+    knowledge remove obsolete-section out-of-date-topic ./my-bundle
+
+Architecture
+------------
+Each ``cmd_*`` function corresponds to one subcommand.  All
+subcommands share the ``--model`` flag (positioned on the main
+parser for convenience).  Error handling is centralised in
+:func:`main`: any ``Exception`` thrown by a command is caught,
+logged, and causes a non-zero exit code.
+
+Logging is configured in :func:`main` with ``%(message)s`` format
+and writes to stderr, keeping stdout clean for future pipe-friendly
+output.
+"""
 
 from __future__ import annotations
 
@@ -13,7 +45,12 @@ logger = logging.getLogger(__name__)
 
 
 def cmd_create(args: argparse.Namespace) -> None:
-    """Create an OKF bundle from a source with progress feedback."""
+    """Create an OKF bundle from a source with progress feedback.
+
+    Logs elapsed time and concept count.  If ``--validate`` is set,
+    runs :meth:`~knowledge.kmd.bundle.BundleSerializer.validate` and
+    reports any structural issues.
+    """
     knowledge = Knowledge(model=args.model)
     source_label = args.input.split("/")[-1] if "/" in args.input else args.input
     if len(source_label) > 50:
@@ -39,7 +76,13 @@ def cmd_create(args: argparse.Namespace) -> None:
 
 
 def cmd_update(args: argparse.Namespace) -> None:
-    """Update an existing OKF bundle by re-extracting from source."""
+    """Update an existing OKF bundle by re-extracting from source.
+
+    .. note::
+
+        This performs a **complete replacement** of the bundle contents
+        — it is not an incremental merge.
+    """
     knowledge = Knowledge(model=args.model)
     source_label = args.input.split("/")[-1] if "/" in args.input else args.input
     if len(source_label) > 50:
@@ -54,7 +97,10 @@ def cmd_update(args: argparse.Namespace) -> None:
 
 
 def cmd_remove(args: argparse.Namespace) -> None:
-    """Remove concepts from an existing OKF bundle."""
+    """Remove concepts from an existing OKF bundle by ID.
+
+    Non-existent IDs are silently ignored (idempotent).
+    """
     knowledge = Knowledge()
     label = ", ".join(args.concept_ids)
     if len(label) > 50:
@@ -69,6 +115,7 @@ def cmd_remove(args: argparse.Namespace) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build the top-level argument parser with all subcommands."""
     parser = argparse.ArgumentParser(
         description="knowledge — OKF bundle creation tool",
     )
@@ -82,7 +129,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_create = sub.add_parser("create", help="Create an OKF bundle from a URL or file")
     p_create.add_argument("input", help="URL or file path")
     p_create.add_argument("output", help="Output directory for the bundle")
-    p_create.add_argument("--validate", action="store_true", help="Validate bundle after writing")
+    p_create.add_argument(
+        "--validate", action="store_true", help="Validate bundle after writing"
+    )
     p_create.set_defaults(func=cmd_create)
 
     p_update = sub.add_parser("update", help="Update an existing bundle from a source")
@@ -99,6 +148,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> None:
+    """Entry point: parse arguments, run command, handle errors.
+
+    All exceptions are caught at this single boundary, logged to stderr,
+    and result in exit code 1.
+    """
     logging.basicConfig(
         level=logging.INFO,
         format="%(message)s",

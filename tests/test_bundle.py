@@ -70,8 +70,12 @@ class TestBundleSerializer:
         with tempfile.TemporaryDirectory() as tmpdir:
             BundleSerializer(path_map=path_map).serialize(graph, tmpdir)
             assert os.path.isfile(os.path.join(tmpdir, "docs", "guides", "intro.md"))
-            assert os.path.isfile(os.path.join(tmpdir, "docs", "guides", "installation.md"))
-            assert os.path.isfile(os.path.join(tmpdir, "docs", "reference", "api-ref.md"))
+            assert os.path.isfile(
+                os.path.join(tmpdir, "docs", "guides", "installation.md")
+            )
+            assert os.path.isfile(
+                os.path.join(tmpdir, "docs", "reference", "api-ref.md")
+            )
 
     def test_round_trip(self) -> None:
         original = _make_graph(*SAMPLE_CONCEPTS)
@@ -82,7 +86,10 @@ class TestBundleSerializer:
             for cid in ("intro", "installation", "api-ref"):
                 assert cid in restored.concepts
                 assert restored.concepts[cid].name == original.concepts[cid].name
-                assert restored.concepts[cid].description == original.concepts[cid].description
+                assert (
+                    restored.concepts[cid].description
+                    == original.concepts[cid].description
+                )
                 assert restored.concepts[cid].tags == original.concepts[cid].tags
 
     def test_write_concept_with_special_chars(self) -> None:

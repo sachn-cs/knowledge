@@ -1,4 +1,23 @@
-"""SDK — creates, updates, and removes OKF bundles from URLs or file paths."""
+"""Public SDK — creates, updates, and removes OKF bundles from URLs or file paths.
+
+Architecture
+------------
+The :class:`Knowledge` class is the single public entry point for
+callers.  It follows a simple two-step pipeline::
+
+    read_source()   →   LLM extraction / serialization
+    (URL or file)       (delegated to sub-packages)
+
+``read_source`` dispatches based on the *source* string:
+
+* ``http://`` or ``https://`` → :func:`fetch_url` (with retries and
+  size limits).
+* Everything else → local file read (``OSError`` → ``FetchError``).
+
+The extracted content is then handed to ``knowledge.llm`` for LLM-based
+concept extraction and ``knowledge.kmd`` for OKF v0.1 bundle
+serialization.
+"""
 
 from __future__ import annotations
 
@@ -20,19 +39,53 @@ MAX_BODY_SIZE = 50 * 1024 * 1024
 
 
 class Knowledge:
-    """Entry point for creating, updating, and removing OKF bundles."""
+    """Entry point for creating, updating, and removing OKF bundles.
+
+    All public methods delegate to sub-packages:
+
+    * :mod:`knowledge.llm` — LLM-based concept extraction.
+    * :mod:`knowledge.kmd` — OKF v0.1 bundle serialization.
+
+    **Example**
+
+    .. code-block:: python
+
+        from knowledge import Knowledge
+
+        k = Knowledge(model="gpt-4o")
+
+        # Return an in-memory knowledge graph
+        graph = k.create("https://example.com/doc.html")
+
+        # Write an OKF v0.1 bundle to disk
+        k.create_bundle("https://example.com/doc.html", "./my-bundle")
+
+        # Re-extract from source and overwrite the bundle
+        k.update("https://example.com/doc.html", "./my-bundle")
+
+        # Remove specific concepts from a bundle
+        k.remove(["obsolete-section"], "./my-bundle")
+    """
 
     def __init__(self, model: str = "gpt-4o") -> None:
+        """Initialize the SDK client.
+
+        Args:
+            model: The litellm-compatible model identifier
+                (e.g. ``"gpt-4o"``, ``"claude-3-opus-20240229"``,
+                ``"ollama/llama3"``).  Defaults to ``"gpt-4o"``.
+        """
         self.model = model
 
     def create(self, source: str) -> KnowledgeGraph:
-        """Fetch or read source and return a KnowledgeGraph via LLM extraction.
+        """Fetch or read *source* and return a ``KnowledgeGraph`` via LLM extraction.
 
         Args:
-            source: URL (http/https) or file path.
+            source: URL (``http``/``https``) or local file path.
 
         Returns:
-            A KnowledgeGraph with one Concept per section.
+            A :class:`~knowledge.models.KnowledgeGraph` with one
+            :class:`~knowledge.models.Concept` per section.
 
         Raises:
             FetchError: If the source cannot be fetched or read.
@@ -41,11 +94,17 @@ class Knowledge:
         return LLMExtractor(model=self.model).extract(raw)
 
     def create_bundle(self, source: str, output_dir: str) -> int:
-        """Create an OKF bundle from a source and write to a directory.
+        """Create an OKF v0.1 bundle from *source* and write to *output_dir*.
+
+        The bundle consists of an ``index.md``, per-concept ``.md`` files
+        with YAML frontmatter, and optional subdirectory groupings when
+        a :attr:`~knowledge.kmd.bundle.BundleSerializer.path_map` is
+        configured.
 
         Args:
             source: URL or file path.
-            output_dir: Output directory for the bundle.
+            output_dir: Output directory for the bundle (created if it
+                does not exist).
 
         Returns:
             Number of concept files written.
@@ -55,11 +114,18 @@ class Knowledge:
         return manager.create(raw, output_dir)
 
     def update(self, source: str, bundle_dir: str) -> int:
-        """Re-extract concepts from source and overwrite an existing bundle.
+        """Re-extract concepts from *source* and overwrite an existing bundle.
+
+        .. note::
+
+            This performs a **complete replacement** — the bundle is
+            regenerated from scratch.  There is no incremental diff or
+            merge.  Any concepts present in the old bundle but not in
+            the new extraction will be removed.
 
         Args:
             source: URL or file path.
-            bundle_dir: Existing bundle directory to update.
+            bundle_dir: Existing bundle directory to overwrite.
 
         Returns:
             Number of concept files written.
@@ -71,18 +137,45 @@ class Knowledge:
     def remove(self, concept_ids: list[str], bundle_dir: str) -> int:
         """Remove specific concepts from an existing bundle by ID.
 
+        The bundle is read from disk, the specified concept IDs are
+        removed from the in-memory graph, and the result is written
+        back to the same directory.  Non-existent IDs are silently
+        ignored (idempotent).
+
         Args:
             concept_ids: One or more concept IDs to remove.
             bundle_dir: Bundle directory to modify.
 
         Returns:
-            Number of concept files written.
+            Number of concept files written after removal.
         """
         manager = KnowledgeBundleManager(model=self.model)
         return manager.remove(concept_ids, bundle_dir)
 
     @staticmethod
     def read_source(source: str) -> str:
+        """Read *source* as a string, dispatching on scheme.
+
+        ``http://`` and ``https://`` sources are fetched via
+        :func:`fetch_url` (with retries and size limits).  All other
+        values are treated as local file paths.
+
+        .. caution::
+
+            Only ``http``/``https`` schemes are recognised as URLs.
+            ``ftp://``, ``file://``, etc. will be treated as file
+            paths and likely fail with ``FetchError``.
+
+        Args:
+            source: URL or file path.
+
+        Returns:
+            The source content as a string.
+
+        Raises:
+            FetchError: If the URL cannot be fetched or the file does
+                not exist / cannot be read.
+        """
         if source.startswith("http://") or source.startswith("https://"):
             return fetch_url(source)
         if not os.path.isfile(source):
@@ -92,16 +185,43 @@ class Knowledge:
 
 
 def fetch_url(url: str) -> str:
-    """Fetch a URL with retries, timeout, and user-agent.
+    """Fetch *url* with retries, timeout, and user-agent header.
+
+    **Retry algorithm**
+
+    Up to :obj:`MAX_RETRIES` attempts with exponential backoff::
+
+        delay = RETRY_DELAY * 2 ** attempt   # 1s, 2s, 4s
+
+    * Network errors (``URLError``, ``OSError``, ``ConnectionError``,
+      ``TimeoutError``) → retry.
+    * HTTP 429 (rate limit) → retry (transient).
+    * Other HTTP 4xx errors → **no retry** (client error, likely
+      permanent).
+    * HTTP 5xx errors → retry (server may recover).
+
+    **Size limits**
+
+    Responses are rejected (without reading the full body) if:
+
+    1. The ``Content-Length`` header exceeds :obj:`MAX_BODY_SIZE` (50 MiB).
+    2. The actual bytes read exceed :obj:`MAX_BODY_SIZE`.
+
+    An extra 1 KiB is read beyond the limit to reliably detect
+    oversized responses.
 
     Args:
-        url: The URL to fetch.
+        url: The URL to fetch.  Only ``http``/``https`` are supported.
 
     Returns:
-        The response body as a string.
+        The response body decoded as a string.  Character encoding is
+        determined from the ``Content-Type`` header (default ``utf-8``).
+        Invalid byte sequences are replaced with the Unicode replacement
+        character (``errors="replace"``).
 
     Raises:
-        FetchError: If all retries are exhausted or the response is too large.
+        FetchError: If all retries are exhausted or the response is too
+            large.
     """
     last_error: Exception | None = None
 
@@ -109,11 +229,14 @@ def fetch_url(url: str) -> str:
         try:
             req = Request(url, headers={"User-Agent": USER_AGENT})
             with urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+                # --- Check Content-Length header (trusted) ----------------
                 content_length = resp.headers.get("Content-Length")
                 if content_length is not None:
                     try:
                         cl = int(content_length)
                     except (ValueError, TypeError):
+                        # Malformed header — ignore and read up to the
+                        # actual limit instead.
                         pass
                     else:
                         if cl > MAX_BODY_SIZE:
@@ -121,6 +244,7 @@ def fetch_url(url: str) -> str:
                                 f"Response too large: {cl} bytes (max {MAX_BODY_SIZE} bytes)"
                             )
 
+                # --- Read body (bounded) ----------------------------------
                 raw: bytes = resp.read(MAX_BODY_SIZE + 1024)
 
                 if len(raw) > MAX_BODY_SIZE:
@@ -128,6 +252,7 @@ def fetch_url(url: str) -> str:
                         f"Response too large: {len(raw)} bytes (max {MAX_BODY_SIZE} bytes)"
                     )
 
+                # --- Decode with detected charset -------------------------
                 content_type = resp.headers.get("Content-Type", "")
                 charset = "utf-8"
                 if "charset=" in content_type:
@@ -137,6 +262,8 @@ def fetch_url(url: str) -> str:
 
         except urllib.error.HTTPError as e:
             last_error = FetchError(f"HTTP {e.code}: {e.reason} for {url}")
+            # Retry 429 (transient rate limit) but bail on other 4xx
+            # (client errors — 401, 403, 404, etc. — are permanent).
             if 400 <= e.code < 500 and e.code not in (429,):
                 break
 
@@ -147,4 +274,8 @@ def fetch_url(url: str) -> str:
             delay = RETRY_DELAY * (2**attempt)
             time.sleep(delay)
 
-    raise (FetchError(str(last_error)) if last_error else FetchError(f"Failed to fetch {url}"))
+    raise (
+        FetchError(str(last_error))
+        if last_error
+        else FetchError(f"Failed to fetch {url}")
+    )

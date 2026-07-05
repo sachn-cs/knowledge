@@ -72,6 +72,9 @@ python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
 
+[tool.vulture]
+ignore_names = ["cls", "validate_id_is_slug", "side_effect"]
+
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["tests"]

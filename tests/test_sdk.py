@@ -196,7 +196,10 @@ class TestFetchUrl:
         """Malformed Content-Length should not crash."""
         mock_resp = MagicMock()
         mock_resp.read.return_value = b"small body"
-        mock_resp.headers = {"Content-Length": "not-a-number", "Content-Type": "text/plain"}
+        mock_resp.headers = {
+            "Content-Length": "not-a-number",
+            "Content-Type": "text/plain",
+        }
         mock_urlopen.return_value.__enter__.return_value = mock_resp
 
         result = fetch_url("https://example.com")
@@ -297,7 +300,9 @@ class TestFetchUrl:
 
 
 def _sample_graph() -> KnowledgeGraph:
-    c1 = Concept(id="intro", name="Introduction", description="Welcome.", tags=["guide"])
+    c1 = Concept(
+        id="intro", name="Introduction", description="Welcome.", tags=["guide"]
+    )
     c2 = Concept(id="usage", name="Usage", description="How to use it.", tags=["guide"])
     return KnowledgeGraph().add_concept(c1).add_concept(c2)
 
@@ -322,7 +327,9 @@ class TestKnowledge:
         fake_html = "<html><body><h2>Intro</h2><p>Hi</p></body></html>"
         patches = [
             patch("knowledge.sdk.fetch_url", return_value=fake_html),
-            patch("knowledge.llm.manager.KnowledgeBundleManager.create", return_value=2),
+            patch(
+                "knowledge.llm.manager.KnowledgeBundleManager.create", return_value=2
+            ),
         ]
         with patches[0], patches[1]:
             knowledge = Knowledge()
@@ -333,7 +340,9 @@ class TestKnowledge:
         fake_html = "<html><body><h2>Intro</h2><p>Hi</p></body></html>"
         patches = [
             patch("knowledge.sdk.fetch_url", return_value=fake_html),
-            patch("knowledge.llm.manager.KnowledgeBundleManager.update", return_value=3),
+            patch(
+                "knowledge.llm.manager.KnowledgeBundleManager.update", return_value=3
+            ),
         ]
         with patches[0], patches[1]:
             knowledge = Knowledge()
@@ -341,7 +350,9 @@ class TestKnowledge:
             assert count == 3
 
     def test_remove(self) -> None:
-        with patch("knowledge.llm.manager.KnowledgeBundleManager.remove", return_value=1):
+        with patch(
+            "knowledge.llm.manager.KnowledgeBundleManager.remove", return_value=1
+        ):
             knowledge = Knowledge()
             count = knowledge.remove(["intro"], "/tmp/bundle")
             assert count == 1
@@ -377,7 +388,9 @@ class TestKnowledge:
             ):
                 with tempfile.TemporaryDirectory() as tmpdir:
                     knowledge = Knowledge()
-                    count = knowledge.create_bundle("https://example.com/doc.html", tmpdir)
+                    count = knowledge.create_bundle(
+                        "https://example.com/doc.html", tmpdir
+                    )
                     assert count == 2
                     assert os.path.isfile(os.path.join(tmpdir, "intro.md"))
                     assert os.path.isfile(os.path.join(tmpdir, "usage.md"))
