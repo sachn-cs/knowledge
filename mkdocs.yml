@@ -1,6 +1,6 @@
 site_name: knowledge SDK
-site_description: An open-source Python SDK for Open Knowledge Format (OKF) documents
-repo_url: https://github.com/anomalyco/knowledge
+site_description: LLM-powered OKF bundle creation from documentation sources
+repo_url: https://github.com/sachn-cs/knowledge
 edit_uri: edit/main/docs/
 
 theme:
@@ -12,10 +12,12 @@ theme:
 
 nav:
   - Home: index.md
-  - User Guide: user_guide.md
+  - Getting Started: getting-started.md
   - Architecture: architecture.md
-  - API Reference: api.md
-  - Plugin Guide: plugin_guide.md
+  - FAQ: faq.md
+  - ADR:
+      - OKF v0.1 Bundle Format: adr/0002-bundle-format-v0-1.md
+      - KMD Flat Format (superseded): adr/0001-kmd-flat-format-v0.1.md
 
 plugins:
   - search

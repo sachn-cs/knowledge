@@ -1,9 +1,13 @@
 # knowledge SDK
 
-**A Python package for knowledge engineering.**
+**LLM-powered OKF bundle creation from documentation sources.**
 
-`knowledge` is an open-source Python SDK for creating, maintaining, and evolving
-**Open Knowledge Format (OKF)** bundles from documentation sources.
+`knowledge` is an open-source Python SDK that downloads a URL (or reads a
+local file), splits the document into sections by headings, sends each
+section to an LLM for structured concept extraction, and writes the
+results as an **OKF v0.1** directory bundle.
+
+---
 
 ## Quick Start
 
@@ -14,46 +18,54 @@ pip install git+https://github.com/sachn-cs/knowledge.git
 ```python
 from knowledge import Knowledge
 
-# Create an OKF bundle from a URL
-knowledge = Knowledge(model="gpt-4o")
-bundle = knowledge.create("https://google.github.io/styleguide/pyguide.html")
-# bundle is a KnowledgeGraph with one Concept per section
+k = Knowledge(model="gpt-4o")
 
-# Write the bundle to disk
-knowledge.create_bundle("https://google.github.io/styleguide/pyguide.html", "./pyguide")
+# Create an OKF bundle from a URL
+k.create_bundle("https://google.github.io/styleguide/pyguide.html", "./pyguide")
 ```
+
+Result: `./pyguide/index.md` + one `.md` per section, each with YAML frontmatter.
+
+---
+
+## Documentation
+
+| Guide | Description |
+|-------|-------------|
+| [Getting Started](getting-started.md) | Installation, first bundle, Python API walkthrough |
+| [Architecture](architecture.md) | Three-layer design, data flow, key decisions |
+| [FAQ](faq.md) | Common questions about usage and development |
 
 ## CLI
 
-```bash
-# Create a bundle from a URL or file
-knowledge create https://example.com/docs.html ./output
+```
+knowledge [--model <model>] <command> [options]
 
-# Update an existing bundle by re-extracting from source
-knowledge update https://example.com/docs.html ./output
-
-# Remove specific concepts from a bundle by ID
-knowledge remove concept-id-1 concept-id-2 ./output
-
-# Select a different LLM model
-knowledge --model claude-3-opus-20240229 create https://example.com/docs.html ./output
+Commands:
+  create    Create a bundle from a URL or file
+  update    Re-extract from source and overwrite a bundle
+  remove    Remove specific concepts by ID
 ```
 
 ## API
 
 | Method | Description |
 |--------|-------------|
-| `Knowledge.create(source)` | Fetch/read source, extract concepts via LLM, return a `KnowledgeGraph` |
-| `Knowledge.create_bundle(source, output_dir)` | Fetch/read + extract + serialize as OKF v0.1 directory bundle |
-| `Knowledge.update(source, bundle_dir)` | Re-extract from source and overwrite an existing bundle |
-| `Knowledge.remove(concept_ids, bundle_dir)` | Remove specific concepts from a bundle by their IDs |
+| `Knowledge.create(source)` | Return a `KnowledgeGraph` via LLM extraction |
+| `Knowledge.create_bundle(source, output_dir)` | Extract + serialize as OKF v0.1 bundle |
+| `Knowledge.update(source, bundle_dir)` | Re-extract and overwrite an existing bundle |
+| `Knowledge.remove(concept_ids, bundle_dir)` | Remove concepts by ID |
 
 ## Key Concepts
 
-- **LLM Extraction** — Documents are split by section headings; each section is sent to an LLM (litellm) for concept extraction as structured JSON.
-- **Knowledge Graph** — An immutable collection of `Concept` objects. Each operation returns a new instance.
-- **OKF v0.1 Bundle** — A directory-based persistence format: `index.md`, per-concept `.md` files, YAML frontmatter, tag-based subdirectory grouping.
-- **Update & Remove** — Bundles can be incrementally modified: re-extract from source with `update()`, or surgically remove concepts with `remove()`.
+- **LLM Extraction** — Documents are split by section headings; each
+  section is sent to an LLM (via litellm) for structured concept extraction.
+- **Knowledge Graph** — An immutable collection of `Concept` objects.
+  Every mutation returns a new instance.
+- **OKF v0.1 Bundle** — Directory-based persistence: `index.md`,
+  per-concept `.md` files, YAML frontmatter, tag-based subdirectory
+  grouping.
+- **Update & Remove** — Bundles can be regenerated or surgically modified.
 
 ## Status — v0.1.0 (pre-release)
 
@@ -66,7 +78,10 @@ knowledge --model claude-3-opus-20240229 create https://example.com/docs.html ./
 | CLI (create, update, remove) | ✅ |
 | Bundle validation | ✅ |
 
+---
+
 ## Links
 
 - [ADR-001: KMD flat format (superseded)](adr/0001-kmd-flat-format-v0.1.md)
 - [ADR-002: OKF v0.1 bundle format](adr/0002-bundle-format-v0-1.md)
+- [GitHub](https://github.com/sachn-cs/knowledge)
