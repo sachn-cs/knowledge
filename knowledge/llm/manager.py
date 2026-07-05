@@ -20,23 +20,23 @@ class KnowledgeBundleManager:
     def __init__(self, model: str = "gpt-4o") -> None:
         self.model = model
 
-    def create(self, source_text: str, output_dir: str, source_url: str = "") -> int:
+    def create(self, source_text: str, output_dir: str) -> int:
         """Extract concepts from source and write an OKF bundle.
 
         Returns the number of concept files written.
         """
         extractor = LLMExtractor(model=self.model)
-        graph = extractor.extract(source_text, source_url=source_url)
+        graph = extractor.extract(source_text)
         os.makedirs(output_dir, exist_ok=True)
         return BundleSerializer().serialize(graph, output_dir)
 
-    def update(self, source_text: str, bundle_dir: str, source_url: str = "") -> int:
+    def update(self, source_text: str, bundle_dir: str) -> int:
         """Re-extract concepts from source and overwrite the existing bundle.
 
         Returns the number of concept files written.
         """
         extractor = LLMExtractor(model=self.model)
-        graph = extractor.extract(source_text, source_url=source_url)
+        graph = extractor.extract(source_text)
         os.makedirs(bundle_dir, exist_ok=True)
         return BundleSerializer().serialize(graph, bundle_dir)
 
@@ -67,8 +67,25 @@ class KnowledgeBundleManager:
                 concept = parse_concept_file(filepath)
                 if concept is not None:
                     graph = graph.add_concept(concept)
+                else:
+                    logger.warning("Skipping unparseable concept file: %s", filepath)
 
         return graph
+
+
+def yaml_unescape(value: str) -> str:
+    """Reverse yaml_escape — unescape a YAML double-quoted string value."""
+    value = value.replace("\\n", "\n")
+    value = value.replace("\\r", "\r")
+    value = value.replace("\\t", "\t")
+    value = value.replace('\\"', '"')
+    value = value.replace("\\\\", "\\")
+    value = re.sub(
+        r"\\x([0-9a-fA-F]{2})",
+        lambda m: chr(int(m.group(1), 16)),
+        value,
+    )
+    return value
 
 
 def parse_concept_file(filepath: str) -> Concept | None:
@@ -91,9 +108,10 @@ def parse_concept_file(filepath: str) -> Concept | None:
             key, _, value = line.partition(":")
             key = key.strip()
             value = value.strip().strip('"')
+            value = yaml_unescape(value)
             if key == "tags":
                 raw = value.strip("[]").strip()
-                value = [t.strip().strip('"') for t in raw.split(",")] if raw else []
+                value = [yaml_unescape(t.strip().strip('"')) for t in raw.split(",")] if raw else []
             metadata[key] = value
 
     cid = metadata.get("id")

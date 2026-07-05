@@ -38,7 +38,7 @@ class Knowledge:
             FetchError: If the source cannot be fetched or read.
         """
         raw = self.read_source(source)
-        return LLMExtractor(model=self.model).extract(raw, source_url=source)
+        return LLMExtractor(model=self.model).extract(raw)
 
     def create_bundle(self, source: str, output_dir: str) -> int:
         """Create an OKF bundle from a source and write to a directory.
@@ -52,7 +52,7 @@ class Knowledge:
         """
         raw = self.read_source(source)
         manager = KnowledgeBundleManager(model=self.model)
-        return manager.create(raw, output_dir, source_url=source)
+        return manager.create(raw, output_dir)
 
     def update(self, source: str, bundle_dir: str) -> int:
         """Re-extract concepts from source and overwrite an existing bundle.
@@ -66,7 +66,7 @@ class Knowledge:
         """
         raw = self.read_source(source)
         manager = KnowledgeBundleManager(model=self.model)
-        return manager.update(raw, bundle_dir, source_url=source)
+        return manager.update(raw, bundle_dir)
 
     def remove(self, concept_ids: list[str], bundle_dir: str) -> int:
         """Remove specific concepts from an existing bundle by ID.

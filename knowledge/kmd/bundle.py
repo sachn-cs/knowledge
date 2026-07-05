@@ -6,7 +6,6 @@ import os
 import re
 from collections import defaultdict
 
-from knowledge.exceptions import ValidationError
 from knowledge.models import Concept, KnowledgeGraph
 
 
@@ -29,8 +28,6 @@ class BundleSerializer:
         Raises:
             ValidationError: If duplicate concept IDs exist.
         """
-        self.check_duplicates(graph)
-
         path_groups: dict[str, list[tuple[str, str, str]]] = defaultdict(list)
         flat_concepts: list[tuple[str, str, str]] = []
 
@@ -150,25 +147,6 @@ class BundleSerializer:
                 rel = os.path.relpath(resolved, os.path.dirname(index_path))
                 broken.append(f"Broken link in {os.path.basename(index_path)}: {rel}")
         return files, broken
-
-    @staticmethod
-    def check_duplicates(graph: KnowledgeGraph) -> None:
-        """Check for duplicate concept IDs before writing.
-
-        Args:
-            graph: The knowledge graph to validate.
-
-        Raises:
-            ValidationError: If duplicate IDs are found.
-        """
-        seen: set[str] = set()
-        dupes: set[str] = set()
-        for c in graph.concepts.values():
-            if c.id in seen:
-                dupes.add(c.id)
-            seen.add(c.id)
-        if dupes:
-            raise ValidationError(f"Duplicate concept IDs: {sorted(dupes)}")
 
     def find_path(self, tags: list[str]) -> str:
         for tag in tags:

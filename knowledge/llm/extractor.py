@@ -58,7 +58,7 @@ Return exactly this JSON shape:
     def __init__(self, model: str = "gpt-4o") -> None:
         self.model = model
 
-    def extract(self, source_text: str, source_url: str = "") -> KnowledgeGraph:
+    def extract(self, source_text: str) -> KnowledgeGraph:
         """Extract concepts from source text, returning a KnowledgeGraph."""
         graph = KnowledgeGraph()
         sections = self.split_sections(source_text)
