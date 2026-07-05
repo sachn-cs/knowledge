@@ -59,7 +59,7 @@ class KnowledgeBundleManager:
         if not os.path.isfile(index_path):
             raise KnowledgeError(f"No bundle found at {bundle_dir}")
 
-        for root, dirs, files in os.walk(bundle_dir):
+        for root, _, files in os.walk(bundle_dir):
             for file in files:
                 if file == "index.md" or not file.endswith(".md"):
                     continue
@@ -101,7 +101,7 @@ def parse_concept_file(filepath: str) -> Concept | None:
     if not cid or not name:
         return None
 
-    body = content[frontmatter_match.end():].strip()
+    body = content[frontmatter_match.end() :].strip()
     # Strip leading h1/h2 if present
     body = re.sub(r"^#+\s+.*", "", body, count=1).strip()
 

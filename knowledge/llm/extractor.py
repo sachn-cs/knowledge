@@ -66,9 +66,7 @@ Return exactly this JSON shape:
 
         return graph
 
-    def split_sections(
-        self, text: str
-    ) -> list[tuple[str, str, int]]:
+    def split_sections(self, text: str) -> list[tuple[str, str, int]]:
         """Split text into (heading, content, level) tuples.
 
         Handles both HTML and Markdown sources. Falls back to treating
@@ -117,9 +115,7 @@ Return exactly this JSON shape:
             sections.append((heading, content, 2))
         return sections
 
-    def extract_section(
-        self, heading: str, content: str, level: int
-    ) -> Concept | None:
+    def extract_section(self, heading: str, content: str, level: int) -> Concept | None:
         prompt = self.EXTRACTION_PROMPT.format(
             heading=heading, content=content, level=level
         )

@@ -52,7 +52,7 @@ class BundleSerializer:
         for subdir, entries in sorted(path_groups.items()):
             target = os.path.join(output_dir, subdir)
             os.makedirs(target, exist_ok=True)
-            for cid, name, desc in entries:
+            for cid, name, _ in entries:
                 self.write_concept(target, graph.concepts[cid])
                 written += 1
 

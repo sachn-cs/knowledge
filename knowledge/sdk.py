@@ -142,4 +142,8 @@ def fetch_url(url: str) -> str:
             delay = RETRY_DELAY * (2**attempt)
             time.sleep(delay)
 
-    raise FetchError(str(last_error)) if last_error else FetchError(f"Failed to fetch {url}")
+    raise (
+        FetchError(str(last_error))
+        if last_error
+        else FetchError(f"Failed to fetch {url}")
+    )
