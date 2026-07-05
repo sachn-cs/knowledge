@@ -1,129 +1,83 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+All notable changes to this project are documented in this file.
 
-### Milestone 1 — Project Foundation
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-- `6f3d47f` Add pass framework exports and comprehensive tests
-- `ee461d9` Add PassManager with dependency resolution and pipeline execution
-- `97f3c4d` Add diagnostics framework and base pass abstraction
-- `932fa33` Add comprehensive OKF round-trip tests
-- `d498bf5` Add OKF parser and serializer for Markdown persistence
-- `f1d2072` Add exceptions module and update package exports
-- `80f56c9` Extend CI to lint tests/ and check formatting
-- `4c978da` Add PEP 561 py.typed marker and gitignore SPEC.md
-- `fe17398` Add KnowledgeGraph container and comprehensive model tests
-- `190f43c` Add domain models: Entity, Concept, Fact, Relationship, Evidence
-- Initial project structure and package layout with hatchling build backend
-- Development tooling (ruff, mypy, pytest, CI)
-- Documentation skeleton (mkdocs)
-- Example project and test infrastructure
+## [Unreleased]
 
-### Milestone 5 — Knowledge Extraction
+### Added
 
-- Add deterministic source readers (Markdown, plain text)
-- Add EntityExtractor, ConceptExtractor, FactExtractor
-- Add RelationshipExtractor with pattern-based entity relation detection
-- Add EvidenceExtractor for capturing source evidence blocks
-- Add ExtractionPipeline orchestrator and ExtractionPass compiler pass
-- Add comprehensive extraction test suite
+- Comprehensive module-level docstrings across all 10 source files.
+- `.editorconfig` for consistent editor settings.
+- `.gitattributes` for line-ending normalization.
+- `.env.example` documenting supported environment variables.
+- `.github/ISSUE_TEMPLATE/bug_report.md` and `feature_request.md`.
+- `.github/PULL_REQUEST_TEMPLATE.md`.
+- `.github/dependabot.yml` for automated dependency updates.
+- `.github/FUNDING.yml` with sponsor placeholders.
+- `docs/getting-started.md`, `docs/architecture.md`, `docs/faq.md` —
+  user-facing documentation guides.
 
-### Milestone 6 — Normalization
+### Changed
 
-- Add StableIdGenerator and CanonicalIdGenerator for content-addressed IDs
-- Add AliasResolver for consolidating entities with equivalent names
-- Add DuplicateDetector for merging duplicate entities and concepts
-- Add AliasResolutionPass and DuplicateDetectionPass compiler passes
-- Add dependency-ordered normalization pipeline tests
+- **LICENSE**: Updated copyright year to 2026.
+- **README.md**: Complete rewrite with badges, features table, configuration
+  docs, tech stack, and improved quick-start examples.
+- **CONTRIBUTING.md**: Expanded from 5 lines to full guide with branch naming,
+  commit conventions, PR process, and coding standards.
+- **CODE_OF_CONDUCT.md**: Added contact email (`sachncs@gmail.com`).
+- **SECURITY.md**: Expanded with supported versions, response timeline,
+  disclosure policy, and security best practices.
+- **pyproject.toml**: Updated development status from "Planning" to "3 - Alpha";
+  added `black` and `vulture` to dev dependencies; added vulture config.
+- **docs/index.md**: Rewritten with links to new docs and MkDocs-friendly
+  homepage structure.
+- **docs/adr/README.md**: Updated index with clearer status descriptions.
+- **mkdocs.yml**: Updated navigation to match current docs structure.
+- Fixed repository URLs from `anomalyco/knowledge` to `sachn-cs/knowledge`
+  across all files. Removed made-up `knowledge-sdk.dev` documentation URL.
 
-### Milestone 8 — Semantic Verification
+## [0.1.0] — 2026-07-05
 
-- Add ReasoningProvider interface for pluggable reasoning
-- Add DeterministicReasoningProvider with rule-based consistency checking
-- Add SemanticValidationPass for evidence, entity, and reference validation
-- Add OntologyValidationPass for relationship type and taxonomy validation
-- Add EvidenceValidationPass for provenance and coverage checks
-- Add verification pipeline integration tests
+### Added
 
-### Milestone 7 — Verification Engine
+- Core Pydantic models: `Concept`, `KnowledgeGraph` (frozen/immutable).
+- OKF v0.1 bundle serializer (`BundleSerializer`) with YAML frontmatter,
+  tag-based subdirectory grouping, and structural validation.
+- LLM-based extraction (`LLMExtractor`) using litellm:
+  - HTML heading (`<h2>`–`<h4>`) and Markdown heading (`##`) splitting.
+  - Section-aware prompt construction.
+  - Pydantic response validation with `model_validate_json`.
+- Resilient URL fetching (`fetch_url`) with:
+  - Exponential-backoff retries (3 attempts).
+  - 50 MiB size limit (content-length and actual bytes).
+  - Charset detection from `Content-Type` header.
+  - HTTP error classification (retry 429/5xx, bail on 4xx).
+- `Knowledge` SDK class (create, create_bundle, update, remove).
+- `KnowledgeBundleManager` with create/update/remove operations.
+- CLI (`knowledge` command) with create, update, remove subcommands
+  and `--model` flag.
+- `ParseConceptFile` with YAML round-trip support (`yaml_escape` /
+  `yaml_unescape`).
+- Bundle validation (link resolution, orphan detection).
+- Concept ID slug validation (`^[a-z][a-z0-9-]*$`).
+- Test suite: 66 tests (BundleSerializer, SDK, CLI, models, fetch_url,
+  parse_concept_file).
+- GitHub Actions CI (ruff, mypy, pytest with coverage, build).
+- GitHub Actions release workflow (PyPI publishing on tag).
+- MkDocs documentation skeleton.
+- Architecture Decision Records (ADR-001, ADR-002).
 
-- `0089194` Update package exports and add comprehensive tests
-- `f3baa2b` Add public SDK, CLI, and extension system
-- `8e11015` Add Verification Engine with converge loop
-- `68711f5` Add automatic repair passes for knowledge graphs
-- `d600114` Add consistency validation and quality scoring passes
-- `05ff309` Add schema and structural validation passes
-- `ec03862` Add KnowledgeGraph merge/diff methods and new exception types
+### Fixed
 
-### Milestone 7 — Verification Engine (details)
-
-- SchemaValidationPass: required fields, valid IDs, duplicate detection
-- StructuralValidationPass: orphaned relationship refs, evidence refs, duplicates
-- ConsistencyValidationPass: contradictory facts, conflicting descriptions
-- ScoringPass + KnowledgeScore: 5 quality dimensions with weighted overall score
-- 4 repair passes: MergeDuplicateEntities, AttachProvenance, FixEvidenceRefs, NormalizeConfidence
-- VerificationEngine: iterative converge loop with quality threshold
-- VerificationResult: final graph, scores, diagnostics, repair metadata
-- Knowledge class: create from text/file, read OKF documents, update with content
-- OKFDocument: save, verify, inspect, score, diff, merge, update, delete
-- CLI: 7 commands (create, read, update, verify, inspect, score, diff)
-- Extension system: ExtensionRegistry with entry point discovery
-- 5 new exception types for structured error handling
-- 5 new test modules (53 tests) — all 243 passing, ruff/mypy clean
-
-### Milestone 13 — Documentation
-
-- `375497c` Comprehensive User Guide with create/read/update/verify/score/diff/merge/delete workflows
-- `375497c` Full API Reference documenting Knowledge, OKFDocument, VerificationResult, CompilerPass, PassManager
-- `375497c` Architecture Guide with layer diagrams, verification lifecycle, and compiler pipeline
-- `375497c` Plugin Guide with extension points, entry point registration, and custom pass examples
-- `375497c` Updated examples/basic_usage.py to use the real SDK
-- `375497c` Updated mkdocs.yml navigation with all documentation sections
-
-### Milestone 14 — Release Preparation
-
-- `214852c` CONTRIBUTING.md with development setup, PR process, and code style
-- `214852c` CODE_OF_CONDUCT.md (Contributor Covenant v2.1)
-- `214852c` GitHub Actions release workflow for PyPI publishing
-- `214852c` Benchmark infrastructure (pytest-benchmark) with verification, serialization, and creation benchmarks
-- `214852c` Updated README.md with current milestone status and documentation links
-- `214852c` Updated pyproject.toml with benchmark dependencies and test paths
-
-### Code Quality & Refactoring
-
-- `e6ae787` (2026-07-03) Update tests for refactored API
-- `00d0512` (2026-07-03) Refactor SDK: public API, lifecycle methods, auto-verify on update
-- `cbdb936` (2026-07-03) Refactor CLI, extensions, and reasoning modules
-- `e7c8dac` (2026-07-03) Refactor VerificationEngine: register all passes, simplify scoring
-- `45f239a` (2026-07-03) Refactor repair passes
-- `8108eba` (2026-07-03) Refactor verification passes
-- `79b53ad` (2026-07-03) Refactor ScoringPass: public API, shared constants, docstrings
-- `c967672` (2026-07-03) Add KnowledgeScore, shared constants, and improve PassResult
-- `bf9838b` (2026-07-03) Add docstrings and fix naming in pass modules
-- `e71237a` (2026-07-03) Add comprehensive docstrings to OKF parser and serializer
-- `1096097` (2026-07-03) Refactor extraction module
-- `5ed5188` (2026-07-03) Consolidate normalization modules
-- `0228e27` (2026-07-03) Refactor KnowledgeGraph: simplify merge/diff, remove unused helpers
-- `afe90b4` (2026-07-03) Add module docstring to models/base.py
-- `962988f` (2026-07-03) Add docstrings to model modules
-- `c8f6246` (2026-07-03) Update passes module exports
-- `a6b4f0d` (2026-07-03) Update __init__.py imports for renamed version module
-- `de51f14` (2026-07-03) Rename _version.py to version.py and add new modules
-
-### Code Quality & Refactoring (continued)
-
-- `f6b72fa` (2026-07-03) docs: update documentation files
-- `12e6310` (2026-07-03) docs: add docstrings to extraction module
-- `b9d8a74` (2026-07-03) chore: update CI, README badges, gitignore, and cleanup.sh
-- `1bbd338` (2026-07-03) test: expand test coverage to 98% and remove semi-private naming
-- `a1a0dad` (2026-07-03) docs: add comprehensive docstrings across all modules
-- `61180b1` (2026-07-03) docs: update CHANGELOG with recent commits
-- `32d1d97` (2026-07-03) fix: use StrEnum instead of str+Enum and remove redundant cast
-- `66efd10` (2026-07-03) refactor: drop _pass suffix from pass module filenames
-- `f741e7f` (2026-07-03) refactor: eliminate unnecessary exception handling patterns
-
-### OKF Bundle Example & CI Fixes
-
-- `7d00c2a` (2026-07-04) feat: add Google Python Style Guide OKF bundle example
-- `f38ee07` (2026-07-04) fix: make benchmark tests work without pytest-benchmark
-- `98dccc3` (2026-07-04) docs: fix repository URLs and security contact email
+- HTML comment injection in heading splitting (strip `<!-- -->` before
+  matching).
+- ATX heading trailing `#` not stripped (e.g. `## Title ##`).
+- litellm exception scope too narrow (`APIError` only → all exceptions).
+- `Content-Length` parse crash on malformed header.
+- Charset quote characters preserved in `Content-Type` decoding.
+- YAML injection via control characters.
+- Unparseable concept files causing silent data loss (now logged as
+  warning).
