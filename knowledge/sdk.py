@@ -118,16 +118,14 @@ def fetch_url(url: str) -> str:
                     else:
                         if cl > MAX_BODY_SIZE:
                             raise FetchError(
-                                f"Response too large: {cl} bytes "
-                                f"(max {MAX_BODY_SIZE} bytes)"
+                                f"Response too large: {cl} bytes (max {MAX_BODY_SIZE} bytes)"
                             )
 
                 raw: bytes = resp.read(MAX_BODY_SIZE + 1024)
 
                 if len(raw) > MAX_BODY_SIZE:
                     raise FetchError(
-                        f"Response too large: {len(raw)} bytes "
-                        f"(max {MAX_BODY_SIZE} bytes)"
+                        f"Response too large: {len(raw)} bytes (max {MAX_BODY_SIZE} bytes)"
                     )
 
                 content_type = resp.headers.get("Content-Type", "")
@@ -149,8 +147,4 @@ def fetch_url(url: str) -> str:
             delay = RETRY_DELAY * (2**attempt)
             time.sleep(delay)
 
-    raise (
-        FetchError(str(last_error))
-        if last_error
-        else FetchError(f"Failed to fetch {url}")
-    )
+    raise (FetchError(str(last_error)) if last_error else FetchError(f"Failed to fetch {url}"))

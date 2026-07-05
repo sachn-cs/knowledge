@@ -121,9 +121,7 @@ Return exactly this JSON shape:
         return sections
 
     def extract_section(self, heading: str, content: str, level: int) -> Concept | None:
-        prompt = self.EXTRACTION_PROMPT.format(
-            heading=heading, content=content, level=level
-        )
+        prompt = self.EXTRACTION_PROMPT.format(heading=heading, content=content, level=level)
         try:
             response = litellm.completion(
                 model=self.model,

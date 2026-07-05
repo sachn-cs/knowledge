@@ -99,9 +99,7 @@ class BundleSerializer:
         indexed_files: set[str] = set()
         for root, _, files in os.walk(output_dir):
             if "index.md" in files:
-                valid, broken = self.links_in_index(
-                    os.path.join(root, "index.md"), root
-                )
+                valid, broken = self.links_in_index(os.path.join(root, "index.md"), root)
                 indexed_files.update(valid)
                 issues.extend(broken)
 
@@ -175,9 +173,7 @@ class BundleSerializer:
 
     def write_concept(self, directory: str, concept: Concept) -> None:
         tag_list = (
-            ", ".join(f'"{self.yaml_escape(t)}"' for t in concept.tags)
-            if concept.tags
-            else ""
+            ", ".join(f'"{self.yaml_escape(t)}"' for t in concept.tags) if concept.tags else ""
         )
         frontmatter_lines = [
             "---",

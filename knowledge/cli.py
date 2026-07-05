@@ -82,9 +82,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_create = sub.add_parser("create", help="Create an OKF bundle from a URL or file")
     p_create.add_argument("input", help="URL or file path")
     p_create.add_argument("output", help="Output directory for the bundle")
-    p_create.add_argument(
-        "--validate", action="store_true", help="Validate bundle after writing"
-    )
+    p_create.add_argument("--validate", action="store_true", help="Validate bundle after writing")
     p_create.set_defaults(func=cmd_create)
 
     p_update = sub.add_parser("update", help="Update an existing bundle from a source")

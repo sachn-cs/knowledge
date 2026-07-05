@@ -81,8 +81,8 @@ class TestKnowledgeGraph:
 class TestParseConceptFile:
     def test_valid_file(self) -> None:
         content = (
-            "---\nid: test-concept\ntitle: \"Test Concept\"\n"
-            "type: concept\ntags: [\"guide\", \"intro\"]\n"
+            '---\nid: test-concept\ntitle: "Test Concept"\n'
+            'type: concept\ntags: ["guide", "intro"]\n'
             "\n---\n\n# Test Concept\n\nDescription here.\n"
         )
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -105,7 +105,7 @@ class TestParseConceptFile:
             assert parse_concept_file(path) is None
 
     def test_file_missing_id(self) -> None:
-        content = "---\ntitle: \"No ID\"\ntype: concept\n\n---\n\nBody.\n"
+        content = '---\ntitle: "No ID"\ntype: concept\n\n---\n\nBody.\n'
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, "no-id.md")
             with open(path, "w") as f:
@@ -121,7 +121,7 @@ class TestParseConceptFile:
             assert parse_concept_file(path) is None
 
     def test_file_empty_body(self) -> None:
-        content = "---\nid: empty-body\ntitle: \"Empty\"\ntype: concept\n\n---\n"
+        content = '---\nid: empty-body\ntitle: "Empty"\ntype: concept\n\n---\n'
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, "empty-body.md")
             with open(path, "w") as f:
@@ -136,7 +136,7 @@ class TestParseConceptFile:
             assert parse_concept_file(path) is None
 
     def test_no_tags(self) -> None:
-        content = "---\nid: no-tags\ntitle: \"No Tags\"\ntype: concept\n\n---\n\nBody.\n"
+        content = '---\nid: no-tags\ntitle: "No Tags"\ntype: concept\n\n---\n\nBody.\n'
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, "no-tags.md")
             with open(path, "w") as f:
@@ -206,6 +206,7 @@ class TestFetchUrl:
     def test_response_too_large(self, mock_urlopen: MagicMock) -> None:
         mock_resp = MagicMock()
         from knowledge.sdk import MAX_BODY_SIZE
+
         mock_resp.read.return_value = b"x" * (MAX_BODY_SIZE + 1)
         mock_resp.headers = {"Content-Type": "text/plain"}
         mock_urlopen.return_value.__enter__.return_value = mock_resp
@@ -250,8 +251,11 @@ class TestFetchUrl:
 
         mock_urlopen.side_effect = [
             HTTPError(
-                "https://example.com", 429, "Too Many Requests",
-                MagicMock(spec=HTTPMessage), None,
+                "https://example.com",
+                429,
+                "Too Many Requests",
+                MagicMock(spec=HTTPMessage),
+                None,
             ),
             _ctx_mock(b"success"),
         ]
@@ -263,9 +267,13 @@ class TestFetchUrl:
     def test_no_retry_on_404(self, mock_urlopen: MagicMock) -> None:
         from http.client import HTTPMessage
         from urllib.error import HTTPError
+
         mock_urlopen.side_effect = HTTPError(
-            "https://example.com", 404, "Not Found",
-            MagicMock(spec=HTTPMessage), None,
+            "https://example.com",
+            404,
+            "Not Found",
+            MagicMock(spec=HTTPMessage),
+            None,
         )
 
         with pytest.raises(FetchError, match="HTTP 404"):
@@ -275,6 +283,7 @@ class TestFetchUrl:
     @patch("knowledge.sdk.urlopen")
     def test_all_retries_exhausted(self, mock_urlopen: MagicMock) -> None:
         from urllib.error import URLError
+
         mock_urlopen.side_effect = URLError("timeout")
 
         with pytest.raises(FetchError, match="Connection failed"):
@@ -288,9 +297,7 @@ class TestFetchUrl:
 
 
 def _sample_graph() -> KnowledgeGraph:
-    c1 = Concept(
-        id="intro", name="Introduction", description="Welcome.", tags=["guide"]
-    )
+    c1 = Concept(id="intro", name="Introduction", description="Welcome.", tags=["guide"])
     c2 = Concept(id="usage", name="Usage", description="How to use it.", tags=["guide"])
     return KnowledgeGraph().add_concept(c1).add_concept(c2)
 
@@ -315,9 +322,7 @@ class TestKnowledge:
         fake_html = "<html><body><h2>Intro</h2><p>Hi</p></body></html>"
         patches = [
             patch("knowledge.sdk.fetch_url", return_value=fake_html),
-            patch(
-                "knowledge.llm.manager.KnowledgeBundleManager.create", return_value=2
-            ),
+            patch("knowledge.llm.manager.KnowledgeBundleManager.create", return_value=2),
         ]
         with patches[0], patches[1]:
             knowledge = Knowledge()
@@ -328,9 +333,7 @@ class TestKnowledge:
         fake_html = "<html><body><h2>Intro</h2><p>Hi</p></body></html>"
         patches = [
             patch("knowledge.sdk.fetch_url", return_value=fake_html),
-            patch(
-                "knowledge.llm.manager.KnowledgeBundleManager.update", return_value=3
-            ),
+            patch("knowledge.llm.manager.KnowledgeBundleManager.update", return_value=3),
         ]
         with patches[0], patches[1]:
             knowledge = Knowledge()
@@ -338,9 +341,7 @@ class TestKnowledge:
             assert count == 3
 
     def test_remove(self) -> None:
-        with patch(
-            "knowledge.llm.manager.KnowledgeBundleManager.remove", return_value=1
-        ):
+        with patch("knowledge.llm.manager.KnowledgeBundleManager.remove", return_value=1):
             knowledge = Knowledge()
             count = knowledge.remove(["intro"], "/tmp/bundle")
             assert count == 1
@@ -376,9 +377,7 @@ class TestKnowledge:
             ):
                 with tempfile.TemporaryDirectory() as tmpdir:
                     knowledge = Knowledge()
-                    count = knowledge.create_bundle(
-                        "https://example.com/doc.html", tmpdir
-                    )
+                    count = knowledge.create_bundle("https://example.com/doc.html", tmpdir)
                     assert count == 2
                     assert os.path.isfile(os.path.join(tmpdir, "intro.md"))
                     assert os.path.isfile(os.path.join(tmpdir, "usage.md"))
