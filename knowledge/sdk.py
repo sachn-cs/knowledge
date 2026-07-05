@@ -108,30 +108,27 @@ def fetch_url(url: str) -> str:
     for attempt in range(MAX_RETRIES):
         try:
             req = Request(url, headers={"User-Agent": USER_AGENT})
-            resp = urlopen(req, timeout=REQUEST_TIMEOUT)
+            with urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+                content_length = resp.headers.get("Content-Length")
+                if content_length and int(content_length) > MAX_BODY_SIZE:
+                    raise FetchError(
+                        f"Response too large: {content_length} bytes "
+                        f"(max {MAX_BODY_SIZE} bytes)"
+                    )
 
-            content_length = resp.headers.get("Content-Length")
-            if content_length and int(content_length) > MAX_BODY_SIZE:
-                resp.close()
-                raise FetchError(
-                    f"Response too large: {content_length} bytes "
-                    f"(max {MAX_BODY_SIZE} bytes)"
-                )
+                raw: bytes = resp.read(MAX_BODY_SIZE + 1024)
 
-            raw: bytes = resp.read(MAX_BODY_SIZE + 1024)
-            resp.close()
+                if len(raw) > MAX_BODY_SIZE:
+                    raise FetchError(
+                        f"Response too large: {len(raw)} bytes "
+                        f"(max {MAX_BODY_SIZE} bytes)"
+                    )
 
-            if len(raw) > MAX_BODY_SIZE:
-                raise FetchError(
-                    f"Response too large: {len(raw)} bytes "
-                    f"(max {MAX_BODY_SIZE} bytes)"
-                )
-
-            content_type = resp.headers.get("Content-Type", "")
-            charset = "utf-8"
-            if "charset=" in content_type:
-                charset = content_type.split("charset=")[-1].split(";")[0].strip()
-            return raw.decode(charset, errors="replace")
+                content_type = resp.headers.get("Content-Type", "")
+                charset = "utf-8"
+                if "charset=" in content_type:
+                    charset = content_type.split("charset=")[-1].split(";")[0].strip()
+                return raw.decode(charset, errors="replace")
 
         except urllib.error.HTTPError as e:
             last_error = FetchError(f"HTTP {e.code}: {e.reason} for {url}")

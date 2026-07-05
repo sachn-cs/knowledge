@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 
@@ -9,6 +10,8 @@ from knowledge.exceptions import KnowledgeError
 from knowledge.kmd.bundle import BundleSerializer
 from knowledge.llm.extractor import LLMExtractor
 from knowledge.models import Concept, KnowledgeGraph
+
+logger = logging.getLogger(__name__)
 
 
 class KnowledgeBundleManager:
@@ -73,7 +76,8 @@ def _parse_concept_file(filepath: str) -> Concept | None:
     try:
         with open(filepath, encoding="utf-8") as f:
             content = f.read()
-    except OSError:
+    except OSError as exc:
+        logger.warning("Skipping unreadable concept file %s: %s", filepath, exc)
         return None
 
     frontmatter_match = re.match(r"^---\s*\n(.+?)\n---", content, re.DOTALL)

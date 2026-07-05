@@ -137,16 +137,18 @@ class BundleSerializer:
         try:
             with open(index_path, encoding="utf-8") as f:
                 content = f.read()
-            for match in re.finditer(r"\(([^)]+)\)", content):
-                link = match.group(1)
-                resolved = os.path.normpath(os.path.join(base_dir, link))
-                if os.path.isfile(resolved):
-                    files.add(resolved)
-                else:
-                    rel = os.path.relpath(resolved, os.path.dirname(index_path))
-                    broken.append(f"Broken link in {os.path.basename(index_path)}: {rel}")
-        except OSError:
-            pass
+        except OSError as exc:
+            broken.append(f"Cannot read {os.path.basename(index_path)}: {exc}")
+            return files, broken
+
+        for match in re.finditer(r"\(([^)]+)\)", content):
+            link = match.group(1)
+            resolved = os.path.normpath(os.path.join(base_dir, link))
+            if os.path.isfile(resolved):
+                files.add(resolved)
+            else:
+                rel = os.path.relpath(resolved, os.path.dirname(index_path))
+                broken.append(f"Broken link in {os.path.basename(index_path)}: {rel}")
         return files, broken
 
     @staticmethod

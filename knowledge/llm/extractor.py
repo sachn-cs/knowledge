@@ -2,12 +2,22 @@
 
 from __future__ import annotations
 
-import json
 import re
 
 import litellm
+from pydantic import BaseModel, ValidationError
 
 from knowledge.models import Concept, KnowledgeGraph
+
+
+class _LLMResponse(BaseModel):
+    """Expected JSON shape from the LLM for a single section."""
+
+    id: str
+    name: str
+    description: str | None = None
+    tags: list[str] = []
+    level: int = 2
 
 
 class LLMExtractor:
@@ -119,30 +129,31 @@ Return exactly this JSON shape:
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.0,
             )
-            text = response.choices[0].message.content
-            if text is None:
-                return None
-            data = self._parse_json(text)
-            if data is None:
-                return None
-            return Concept(
-                id=data.get("id", heading.lower().replace(" ", "-")),
-                name=data.get("name", heading),
-                description=data.get("description"),
-                tags=data.get("tags", []),
-            )
-        except Exception:
+        except litellm.APIError:  # type: ignore[attr-defined]
             return None
 
-    @staticmethod
-    def _parse_json(text: str) -> dict[str, object] | None:
-        text = text.strip()
-        if text.startswith("```"):
-            text = re.sub(r"^```(?:json)?\s*", "", text)
-            text = re.sub(r"\s*```$", "", text)
-        try:
-            result = json.loads(text)
-            assert isinstance(result, dict)
-            return result
-        except json.JSONDecodeError:
+        text = response.choices[0].message.content
+        if text is None:
             return None
+
+        cleaned = _strip_json_fence(text)
+        try:
+            parsed = _LLMResponse.model_validate_json(cleaned)
+        except (ValidationError, ValueError):
+            return None
+
+        return Concept(
+            id=parsed.id,
+            name=parsed.name,
+            description=parsed.description,
+            tags=parsed.tags,
+        )
+
+
+def _strip_json_fence(text: str) -> str:
+    """Remove markdown code fences wrapping a JSON block."""
+    text = text.strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*", "", text)
+        text = re.sub(r"\s*```$", "", text)
+    return text.strip()

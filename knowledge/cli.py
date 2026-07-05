@@ -18,13 +18,7 @@ def cmd_create(args: argparse.Namespace) -> None:
 
     print(f"Creating bundle from {source_label}...", end=" ", flush=True)
     t0 = time.time()
-
-    try:
-        count = knowledge.create_bundle(args.input, args.output)
-    except Exception:
-        print("FAILED")
-        raise
-
+    count = knowledge.create_bundle(args.input, args.output)
     elapsed = time.time() - t0
     print(f"done ({elapsed:.1f}s)")
     print(f"Wrote {count} concepts to {args.output}")
@@ -50,13 +44,7 @@ def cmd_update(args: argparse.Namespace) -> None:
 
     print(f"Updating bundle from {source_label}...", end=" ", flush=True)
     t0 = time.time()
-
-    try:
-        count = knowledge.update(args.input, args.bundle_dir)
-    except Exception:
-        print("FAILED")
-        raise
-
+    count = knowledge.update(args.input, args.bundle_dir)
     elapsed = time.time() - t0
     print(f"done ({elapsed:.1f}s)")
     print(f"Wrote {count} concepts to {args.bundle_dir}")
@@ -71,13 +59,7 @@ def cmd_remove(args: argparse.Namespace) -> None:
 
     print(f"Removing concepts [{label}]...", end=" ", flush=True)
     t0 = time.time()
-
-    try:
-        count = knowledge.remove(args.concept_ids, args.bundle_dir)
-    except Exception:
-        print("FAILED")
-        raise
-
+    count = knowledge.remove(args.concept_ids, args.bundle_dir)
     elapsed = time.time() - t0
     print(f"done ({elapsed:.1f}s)")
     print(f"Wrote {count} concepts to {args.bundle_dir}")
