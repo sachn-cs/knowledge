@@ -2,40 +2,33 @@
 
 ## v0.1.0 — Current (pre-release)
 
-- Knowledge Markdown (KMD) flat-file persistence
-- Compiler pass framework with dependency resolution
-- Deterministic extraction (entities, concepts, facts, relationships, evidence)
-- Normalization (alias resolution, duplicate detection, stable IDs)
-- Iterative verification engine (validate → diagnose → repair → rescore)
-- 5 quality dimensions with weighted scoring
-- CLI with 7 commands
-- Extension system via entry points
-- Large-graph benchmarks (1000+ element graphs)
-- ADR directory with architecture decision records
-- Security hardening guidelines
-- Plugin example (examples/plugin_example.py)
-- 98% test coverage, 288 tests, clean mypy, clean ruff
+- Core Pydantic models: `Concept`, `KnowledgeGraph` (frozen/immutable).
+- OKF v0.1 bundle serializer (`BundleSerializer`) with YAML frontmatter,
+  tag-based subdirectory grouping, and structural validation.
+- LLM-powered extraction (`LLMExtractor`) via litellm with HTML/Markdown
+  heading splitting.
+- Resilient URL fetching with retries, size limits, and charset detection.
+- `Knowledge` SDK class (create, create_bundle, update, remove).
+- CLI (`knowledge` command) with create, update, remove subcommands.
+- Bundle validation (link resolution, orphan detection, absolute URL skipping).
+- Concept ID slug validation (`^[a-z][a-z0-9-]*$`).
+- Test suite: 66+ tests.
+- GitHub Actions CI (ruff, mypy, pytest with coverage, build).
+- MkDocs documentation skeleton.
+- Architecture Decision Records (ADR-001, ADR-002).
 
 ## v0.2.0 — Planned
 
-- **OKF v0.1 directory bundle support** — Google-compatible OKF format with index.md, files per element, YAML frontmatter, and assets/
-- HTML source reader
-- Property-based testing (Hypothesis)
-- Migration tool: KMD → OKF v0.1 converter
-
-## v0.3.0 — Future
-
-- PDF source reader (via text extraction)
-- Configurable pass ordering via TOML
-- Reasoning provider plugin API with AI-assisted extraction
-- Origin tracking and provenance chains
-- Knowledge diff visualization
-- PyPI release workflow automation
+- Property-based testing (Hypothesis).
+- PDF source reader.
+- Configurable pass ordering.
+- Expanded bundle validation (description non-empty, glossary completeness,
+  cross-reference consistency).
+- Community-contributed features and bugfixes.
 
 ## v1.0.0 — Stable Release
 
-- Full OKF v0.1 compliance
-- Stable public API (semver 1.0)
-- Comprehensive user documentation with tutorials
-- Benchmark regression tracking
-- Release workflow publishing to PyPI
+- Stable public API (semver 1.0).
+- PyPI release with automated publishing workflow.
+- Comprehensive user documentation with tutorials.
+- Benchmark regression tracking.
