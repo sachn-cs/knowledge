@@ -34,9 +34,5 @@ site/
 # Project-specific
 SPEC.md
 
-# Test artifacts
-style-guide/
-examples/
-
 # Generated bundles
 google-python-style-guide/
