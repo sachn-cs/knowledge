@@ -30,6 +30,7 @@ from knowledge.exceptions import KnowledgeError
 from knowledge.kmd.bundle import BundleSerializer
 from knowledge.llm.extractor import LLMExtractor
 from knowledge.models import Concept, KnowledgeGraph
+from knowledge.version import DEFAULT_MODEL
 
 logger = logging.getLogger(__name__)
 
@@ -41,20 +42,27 @@ class KnowledgeBundleManager:
     -----
     ::
 
-        manager = KnowledgeBundleManager(model="gpt-4o")
+        manager = KnowledgeBundleManager()
         count = manager.create(raw_text, "./my-bundle")
         count = manager.update(raw_text, "./my-bundle")
         count = manager.remove(["section-a"], "./my-bundle")
     """
 
-    def __init__(self, model: str = "gpt-4o") -> None:
+    def __init__(
+        self,
+        model: str = DEFAULT_MODEL,
+        path_map: dict[str, str] | None = None,
+    ) -> None:
         """Initialise the manager.
 
         Args:
             model: A litellm-compatible model identifier.
                 Defaults to ``"gpt-4o"``.
+            path_map: Optional mapping of tag → subdirectory path.
+                Passed through to the :class:`~knowledge.kmd.bundle.BundleSerializer`.
         """
         self.model = model
+        self.path_map = path_map
 
     def create(self, source_text: str, output_dir: str) -> int:
         """Extract concepts from *source_text* and write a new OKF bundle.
@@ -71,7 +79,7 @@ class KnowledgeBundleManager:
         extractor = LLMExtractor(model=self.model)
         graph = extractor.extract(source_text)
         os.makedirs(output_dir, exist_ok=True)
-        return BundleSerializer().serialize(graph, output_dir)
+        return BundleSerializer(path_map=self.path_map).serialize(graph, output_dir)
 
     def update(self, source_text: str, bundle_dir: str) -> int:
         """Re-extract concepts from *source_text* and overwrite *bundle_dir*.
@@ -90,12 +98,12 @@ class KnowledgeBundleManager:
         extractor = LLMExtractor(model=self.model)
         graph = extractor.extract(source_text)
         os.makedirs(bundle_dir, exist_ok=True)
-        return BundleSerializer().serialize(graph, bundle_dir)
+        return BundleSerializer(path_map=self.path_map).serialize(graph, bundle_dir)
 
     def remove(self, concept_ids: list[str], bundle_dir: str) -> int:
         """Remove specific concepts from *bundle_dir* by ID.
 
-        The bundle is read back from disk, concepts matching the given
+        The bundle is read from disk, concepts matching the given
         IDs are removed, and the result is written back.  Non-existent
         IDs are silently ignored (idempotent).
 
@@ -110,7 +118,7 @@ class KnowledgeBundleManager:
         for cid in concept_ids:
             graph = graph.remove_concept(cid)
         os.makedirs(bundle_dir, exist_ok=True)
-        return BundleSerializer().serialize(graph, bundle_dir)
+        return BundleSerializer(path_map=self.path_map).serialize(graph, bundle_dir)
 
     @staticmethod
     def read_bundle(bundle_dir: str) -> KnowledgeGraph:

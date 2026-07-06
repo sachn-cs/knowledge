@@ -22,12 +22,14 @@ from __future__ import annotations
 
 import logging
 import re
+import string
 
 import litellm
 from litellm.exceptions import APIError as LLMAPIError
 from pydantic import BaseModel, ValidationError
 
 from knowledge.models import Concept, KnowledgeGraph
+from knowledge.version import DEFAULT_MODEL
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +56,7 @@ class LLMExtractor:
     -----
     ::
 
-        extractor = LLMExtractor(model="gpt-4o")
+        extractor = LLMExtractor()
         graph = extractor.extract(source_text)
         # graph is a KnowledgeGraph with one Concept per section
 
@@ -62,7 +64,8 @@ class LLMExtractor:
     section to the configured LLM, and assembles the results.
     """
 
-    EXTRACTION_PROMPT = """\
+    EXTRACTION_PROMPT = string.Template(
+        """\
 You are a knowledge extraction system. Given a section from a technical \
 document, return a JSON object describing the concept.
 
@@ -73,20 +76,21 @@ Rules:
 - tags should be short categorization terms
 - Return ONLY a JSON object. No markdown fences, no explanation.
 
-Section heading: {heading}
+Section heading: $heading
 Content:
-{content}
+$content
 
 Return exactly this JSON shape:
-{{
+{
     "id": "...",
     "name": "...",
     "description": "...",
     "tags": ["..."],
-    "level": {level}
-}}"""
+    "level": $level
+}"""
+    )
 
-    def __init__(self, model: str = "gpt-4o") -> None:
+    def __init__(self, model: str = DEFAULT_MODEL) -> None:
         """Initialise the extractor.
 
         Args:
@@ -228,7 +232,9 @@ Return exactly this JSON shape:
             A :class:`~knowledge.models.Concept` instance, or ``None``
             if the LLM call fails or returns unparseable output.
         """
-        prompt = self.EXTRACTION_PROMPT.format(heading=heading, content=content, level=level)
+        prompt = self.EXTRACTION_PROMPT.safe_substitute(
+            heading=heading, content=content, level=level
+        )
         try:
             response = litellm.completion(
                 model=self.model,

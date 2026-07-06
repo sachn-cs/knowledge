@@ -40,8 +40,24 @@ import sys
 import time
 
 from knowledge import Knowledge
+from knowledge.version import DEFAULT_MODEL
 
 logger = logging.getLogger(__name__)
+
+MAX_LABEL_LENGTH = 50
+
+
+def _shorten_label(label: str) -> str:
+    """Truncate *label* to :obj:`MAX_LABEL_LENGTH` characters, appending ``...``."""
+    if len(label) > MAX_LABEL_LENGTH:
+        return label[: MAX_LABEL_LENGTH - 3] + "..."
+    return label
+
+
+def _source_label(source: str) -> str:
+    """Extract a short display label from a source string (URL or file path)."""
+    label = source.split("/")[-1] if "/" in source else source
+    return _shorten_label(label)
 
 
 def cmd_create(args: argparse.Namespace) -> None:
@@ -52,9 +68,7 @@ def cmd_create(args: argparse.Namespace) -> None:
     reports any structural issues.
     """
     knowledge = Knowledge(model=args.model)
-    source_label = args.input.split("/")[-1] if "/" in args.input else args.input
-    if len(source_label) > 50:
-        source_label = source_label[:47] + "..."
+    source_label = _source_label(args.input)
 
     logger.info("Creating bundle from %s...", source_label)
     t0 = time.time()
@@ -84,9 +98,7 @@ def cmd_update(args: argparse.Namespace) -> None:
         — it is not an incremental merge.
     """
     knowledge = Knowledge(model=args.model)
-    source_label = args.input.split("/")[-1] if "/" in args.input else args.input
-    if len(source_label) > 50:
-        source_label = source_label[:47] + "..."
+    source_label = _source_label(args.input)
 
     logger.info("Updating bundle from %s...", source_label)
     t0 = time.time()
@@ -102,9 +114,7 @@ def cmd_remove(args: argparse.Namespace) -> None:
     Non-existent IDs are silently ignored (idempotent).
     """
     knowledge = Knowledge()
-    label = ", ".join(args.concept_ids)
-    if len(label) > 50:
-        label = label[:47] + "..."
+    label = _shorten_label(", ".join(args.concept_ids))
 
     logger.info("Removing concepts [%s]...", label)
     t0 = time.time()
@@ -121,8 +131,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--model",
-        default="gpt-4o",
-        help="LLM model to use (default: gpt-4o)",
+        default=DEFAULT_MODEL,
+        help=f"LLM model to use (default: {DEFAULT_MODEL})",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 

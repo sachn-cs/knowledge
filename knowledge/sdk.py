@@ -24,12 +24,14 @@ from __future__ import annotations
 import os
 import time
 import urllib.error
+from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 from knowledge.exceptions import FetchError
 from knowledge.llm.extractor import LLMExtractor
 from knowledge.llm.manager import KnowledgeBundleManager
 from knowledge.models import KnowledgeGraph
+from knowledge.version import DEFAULT_MODEL
 
 USER_AGENT = "knowledge-sdk/0.1.0"
 REQUEST_TIMEOUT = 30
@@ -52,7 +54,7 @@ class Knowledge:
 
         from knowledge import Knowledge
 
-        k = Knowledge(model="gpt-4o")
+        k = Knowledge()
 
         # Return an in-memory knowledge graph
         graph = k.create("https://example.com/doc.html")
@@ -67,15 +69,22 @@ class Knowledge:
         k.remove(["obsolete-section"], "./my-bundle")
     """
 
-    def __init__(self, model: str = "gpt-4o") -> None:
+    def __init__(
+        self,
+        model: str = DEFAULT_MODEL,
+        path_map: dict[str, str] | None = None,
+    ) -> None:
         """Initialize the SDK client.
 
         Args:
             model: The litellm-compatible model identifier
                 (e.g. ``"gpt-4o"``, ``"claude-3-opus-20240229"``,
                 ``"ollama/llama3"``).  Defaults to ``"gpt-4o"``.
+            path_map: Optional mapping of tag → subdirectory path.
+                Passed through to the :class:`~knowledge.kmd.bundle.BundleSerializer`.
         """
         self.model = model
+        self.path_map = path_map
 
     def create(self, source: str) -> KnowledgeGraph:
         """Fetch or read *source* and return a ``KnowledgeGraph`` via LLM extraction.
@@ -93,7 +102,12 @@ class Knowledge:
         raw = self.read_source(source)
         return LLMExtractor(model=self.model).extract(raw)
 
-    def create_bundle(self, source: str, output_dir: str) -> int:
+    def create_bundle(
+        self,
+        source: str,
+        output_dir: str,
+        path_map: dict[str, str] | None = None,
+    ) -> int:
         """Create an OKF v0.1 bundle from *source* and write to *output_dir*.
 
         The bundle consists of an ``index.md``, per-concept ``.md`` files
@@ -105,15 +119,23 @@ class Knowledge:
             source: URL or file path.
             output_dir: Output directory for the bundle (created if it
                 does not exist).
+            path_map: Optional mapping of tag → subdirectory path.
+                Overrides the instance-level path_map if provided.
 
         Returns:
             Number of concept files written.
         """
         raw = self.read_source(source)
-        manager = KnowledgeBundleManager(model=self.model)
+        pm = path_map if path_map is not None else self.path_map
+        manager = KnowledgeBundleManager(model=self.model, path_map=pm)
         return manager.create(raw, output_dir)
 
-    def update(self, source: str, bundle_dir: str) -> int:
+    def update(
+        self,
+        source: str,
+        bundle_dir: str,
+        path_map: dict[str, str] | None = None,
+    ) -> int:
         """Re-extract concepts from *source* and overwrite an existing bundle.
 
         .. note::
@@ -126,15 +148,23 @@ class Knowledge:
         Args:
             source: URL or file path.
             bundle_dir: Existing bundle directory to overwrite.
+            path_map: Optional mapping of tag → subdirectory path.
+                Overrides the instance-level path_map if provided.
 
         Returns:
             Number of concept files written.
         """
         raw = self.read_source(source)
-        manager = KnowledgeBundleManager(model=self.model)
+        pm = path_map if path_map is not None else self.path_map
+        manager = KnowledgeBundleManager(model=self.model, path_map=pm)
         return manager.update(raw, bundle_dir)
 
-    def remove(self, concept_ids: list[str], bundle_dir: str) -> int:
+    def remove(
+        self,
+        concept_ids: list[str],
+        bundle_dir: str,
+        path_map: dict[str, str] | None = None,
+    ) -> int:
         """Remove specific concepts from an existing bundle by ID.
 
         The bundle is read from disk, the specified concept IDs are
@@ -145,11 +175,14 @@ class Knowledge:
         Args:
             concept_ids: One or more concept IDs to remove.
             bundle_dir: Bundle directory to modify.
+            path_map: Optional mapping of tag → subdirectory path.
+                Overrides the instance-level path_map if provided.
 
         Returns:
             Number of concept files written after removal.
         """
-        manager = KnowledgeBundleManager(model=self.model)
+        pm = path_map if path_map is not None else self.path_map
+        manager = KnowledgeBundleManager(model=self.model, path_map=pm)
         return manager.remove(concept_ids, bundle_dir)
 
     @staticmethod
@@ -176,7 +209,8 @@ class Knowledge:
             FetchError: If the URL cannot be fetched or the file does
                 not exist / cannot be read.
         """
-        if source.startswith("http://") or source.startswith("https://"):
+        scheme = urlparse(source).scheme
+        if scheme in ("http", "https"):
             return fetch_url(source)
         if not os.path.isfile(source):
             raise FetchError(f"File not found: {source}")
@@ -256,8 +290,7 @@ def fetch_url(url: str) -> str:
                 content_type = resp.headers.get("Content-Type", "")
                 charset = "utf-8"
                 if "charset=" in content_type:
-                    charset = content_type.split("charset=")[-1].split(";")[0].strip()
-                    charset = charset.strip("\"'")
+                    charset = content_type.split("charset=")[-1].split(";")[0].strip().strip("\"'")
                 return raw.decode(charset, errors="replace")
 
         except urllib.error.HTTPError as e:
