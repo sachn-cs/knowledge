@@ -6,7 +6,7 @@ Usage
 
     from knowledge import Knowledge
 
-    k = Knowledge(model="gpt-4o")
+    k = Knowledge()
     graph = k.create("https://example.com/doc.html")
 
 Sub-packages
@@ -18,13 +18,15 @@ Public API
 ----------
 * :class:`~knowledge.sdk.Knowledge` — single entry point for all
   create / update / remove operations.
+* ``DEFAULT_MODEL`` — default LLM model identifier.
 * ``__version__`` — PEP 440 version string.
 """
 
 from knowledge.sdk import Knowledge
-from knowledge.version import __version__
+from knowledge.version import DEFAULT_MODEL, __version__
 
 __all__ = [
     "Knowledge",
+    "DEFAULT_MODEL",
     "__version__",
 ]
