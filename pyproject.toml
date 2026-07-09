@@ -20,7 +20,7 @@ keywords = [
     "extraction",
 ]
 authors = [
-    { name = "knowledge contributors" },
+    { name = "Sachin", email = "sachncs@gmail.com" },
 ]
 
 classifiers = [
