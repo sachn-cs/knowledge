@@ -1,7 +1,7 @@
 site_name: knowledge SDK
 site_description: LLM-powered OKF bundle creation from documentation sources
-repo_url: https://github.com/sachn-cs/knowledge
-edit_uri: edit/main/docs/
+repo_url: https://github.com/sachncs/knowledge
+edit_uri: edit/master/docs/
 
 theme:
   name: material

@@ -43,10 +43,10 @@ dependencies = [
 knowledge = "knowledge.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/sachn-cs/knowledge"
-Documentation = "https://sachn-cs.github.io/knowledge"
-Source = "https://github.com/sachn-cs/knowledge"
-Issues = "https://github.com/sachn-cs/knowledge/issues"
+Homepage = "https://github.com/sachncs/knowledge"
+Documentation = "https://sachncs.github.io/knowledge"
+Source = "https://github.com/sachncs/knowledge"
+Issues = "https://github.com/sachncs/knowledge/issues"
 
 [project.optional-dependencies]
 dev = [
