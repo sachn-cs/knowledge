@@ -129,6 +129,42 @@ See [`.env.example`](.env.example) for all options.
 
 ---
 
+## API
+
+| Symbol | Type | Description |
+|--------|------|-------------|
+| `Knowledge` | class | Top-level SDK; constructed with optional `model=`, `temperature=`, etc. |
+| `Knowledge.create(source)` | method | Return an in-memory `KnowledgeGraph` from `source` (URL or file path) |
+| `Knowledge.create_bundle(source, output_dir)` | method | Write an OKF v0.1 bundle to `output_dir` |
+| `Knowledge.update(source, bundle_dir)` | method | Re-extract and refresh concepts in an existing bundle |
+| `Knowledge.remove(concept_ids, bundle_dir)` | method | Delete concepts by ID from a bundle |
+| `Concept` | model | Immutable Pydantic concept with title, summary, body, tags |
+| `KnowledgeGraph` | model | Immutable Pydantic graph keyed by concept ID |
+| `BundleSerializer` | class | OKF v0.1 directory serialiser |
+| `KnowledgeBundleManager` | class | Lifecycle manager (create / update / remove) |
+| `LLMExtractor` | class | litellm-backed structured extraction worker |
+| `fetch_url` | function | Resilient HTTP GET (retries, charset detection, size limits) |
+
+---
+
+## Examples
+
+```bash
+# Convert a Markdown README into an OKF bundle indexed by section
+knowledge create https://raw.githubusercontent.com/sachncs/knowledge/master/README.md knowledge-self/
+
+# Convert local HTML
+knowledge create ./docs/getting-started.html ./docs-bundle/
+
+# Refresh the bundle after the source has changed
+knowledge update https://google.github.io/styleguide/pyguide.html style-guide/
+
+# Trim a bundle
+knowledge remove deprecated-section outdated-topic ./bundle/
+```
+
+---
+
 ## Project Structure
 
 ```
@@ -201,6 +237,32 @@ refactor: extract yaml_escape to static method
 test: add round-trip serialization tests
 chore: update ruff config
 ```
+
+---
+
+## Testing
+
+```bash
+pytest                                       # full suite
+pytest --cov=knowledge tests/                # with coverage
+```
+
+---
+
+## Build
+
+```bash
+python -m build                              # sdist + wheel
+hatch build                                  # equivalent
+```
+
+---
+
+## Release
+
+Versions follow [Semantic Versioning](https://semver.org/). Releases are
+tagged via `version:X.Y.Z` commits in [CHANGELOG.md](CHANGELOG.md) and
+published to PyPI via the CI workflow (`release.yml`).
 
 ---
 
